@@ -20,6 +20,7 @@ venv/
 .env.*
 
 *.spec
+*.sqlite
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/

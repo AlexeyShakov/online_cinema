@@ -1,0 +1,3 @@
+import os
+
+BATCH_SIZE_FOR_TRANSFERRING = int(os.getenv("BATCH_SIZE_FOR_TRANSFERRING", "500"))
