@@ -1,1 +1,0 @@
-from .router import MOVIE_ROUTES

@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Query
 
-MOVIE_ROUTES = APIRouter(
-    prefix="/movies",
-    tags=["Movies"]
+
+ACTOR_ROUTES = APIRouter(
+    prefix="/person",
+    tags=["Actors"]
 )
 
 
-@MOVIE_ROUTES.get("/search")
-async def search_movies(
+@ACTOR_ROUTES.get("/search")
+async def search_actors(
     filter_search: str = Query(..., alias="filter[search]", description="Search term for full-text search"),
     page_number: int = Query(1, alias="page[number]", description="Page number for pagination"),
     page_size: int = Query(10, alias="page[size]", description="Number of items per page")
 ):
-    return {"message": "Hello movies"}
+    return {"message": "Hello person"}
