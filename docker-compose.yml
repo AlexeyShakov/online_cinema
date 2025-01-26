@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  elasticsearch:
+    image: elasticsearch:8.16.3
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false  # не используем аутентификацию и авторизацию
+      - xpack.security.http.ssl.enabled=false
+      - cluster.name=online_cinema_cluster
+      - node.name=online_cinema
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # ограничиваем по памяти
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+volumes:
+  es_data:
