@@ -1,15 +1,16 @@
 from typing import Sequence, Type
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import selectinload
 
 from src.person import Person
 from src.films import Film
 from src import get_db_session, Base
 from src.elasticsearch import config, send_to_elastic, get_es_connection
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
-def migrate_entities_to_elastic(
+async def migrate_entities_to_elastic(
         model: Type[Base],
         related_obj_field_name: str,
         batch_size: int,
@@ -26,44 +27,57 @@ def migrate_entities_to_elastic(
         ]
     }
     """
-    session_generator = get_db_session()
-    session = next(session_generator)
-    try:
-        for batch in _get_batches(batch_size, session, model, related_obj_field_name):
+    async for session in get_db_session():
+        data_for_sending_to_elastic = []
+        async for batch in _get_batches(batch_size, session, model, related_obj_field_name):
             if model is Person:
-                batch_formed_for_elastic = _form_person_objs(batch)
+                batch_formed_for_elastic = await _form_person_objs(batch)
             elif model is Film:
-                batch_formed_for_elastic = _form_film_objs(batch)
+                batch_formed_for_elastic = await _form_film_objs(batch)
             else:
                 raise ValueError("Неизвестный тип сущности для отправки в Elastic!")
-            send_to_elastic(batch_formed_for_elastic, get_es_connection())
-    finally:
-        next(session_generator, None)
+            data_for_sending_to_elastic.append(batch_formed_for_elastic)
+            es_connection = await get_es_connection()
+            await send_to_elastic(batch_formed_for_elastic, es_connection)
 
 
-def _get_batches(
+async def _get_batches(
         batch_size: int,
-        session: Session,
+        session: AsyncSession,
         model: Type[Base],
         related_obj_field_name: str,
         ) -> Sequence[Base]:
     start = 0
     while True:
-        stmt = select(model).options(
-            selectinload(getattr(model, related_obj_field_name))
-        ).offset(start).limit(batch_size)
-
-        # Если бы использовал PostgreSQL, можно было бы оптимизировать получение персон
-        # с помощью server-side cursor - yield_per(batch_size) вместо all()
-        persons = session.scalars(stmt).all()
-        if not persons:
+        entities = await _get_entities(
+            model=model,
+            related_obj_field_name=related_obj_field_name,
+            batch_size=batch_size,
+            start=start,
+            session=session
+        )
+        if not entities:
             break
 
-        yield persons
+        yield entities
         start += batch_size
 
 
-def _form_person_objs(
+async def _get_entities(
+        model: Type[Base],
+        related_obj_field_name: str,
+        batch_size: int,
+        start: int,
+        session: AsyncSession
+):
+    stmt = select(model).options(
+        selectinload(getattr(model, related_obj_field_name))
+    ).offset(start).limit(batch_size)
+    result = await session.scalars(stmt)
+    return result.all()
+
+
+async def _form_person_objs(
         persons: Sequence[Person],
 ) -> Sequence[dict]:
     result = []
@@ -84,7 +98,7 @@ def _form_person_objs(
     return result
 
 
-def _form_film_objs(
+async def _form_film_objs(
         films: Sequence[Film],
 ) -> Sequence[dict]:
     result = []

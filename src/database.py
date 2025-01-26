@@ -1,25 +1,28 @@
-from typing import Generator
+from typing import AsyncGenerator
 
-from sqlalchemy import create_engine, types
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import types
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from datetime import datetime
 import os
 
+from src import global_vars
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite')}"
+DATABASE_URL = f"sqlite+aiosqlite:///{os.path.join(BASE_DIR, 'db.sqlite')}"
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+async_engine = create_async_engine(DATABASE_URL, echo=global_vars.VIEW_SQL_QUERIES)
+AsyncSessionLocal = async_sessionmaker(
+    bind=async_engine,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False,
+)
 
-
-def get_db_session() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionLocal() as session:
+        yield session
 
 
 class DateTimeWithTZ(types.TypeDecorator):

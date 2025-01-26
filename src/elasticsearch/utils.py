@@ -1,28 +1,27 @@
 from typing import Sequence
 
-from elasticsearch import Elasticsearch
+from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import RequestError,BadRequestError
-from elasticsearch.helpers import bulk
+from elasticsearch.helpers import async_bulk
 
-import logging
+from src import LOGGER
 
 
-def create_index(mapping: dict, index_name: str, es_client: Elasticsearch) -> None:
-    if not es_client.indices.exists(index=index_name):
+async def create_index(mapping: dict, index_name: str, es_client: AsyncElasticsearch) -> None:
+    if not await es_client.indices.exists(index=index_name):
         try:
-            es_client.indices.create(index=index_name, body=mapping)
-            logging.info(f"Индекс '{index_name}' успешно создан")
+            await es_client.indices.create(index=index_name, body=mapping)
+            LOGGER.info(f"Индекс '{index_name}' успешно создан")
         except RequestError as e:
-            logging.exception(f"Ошибка при создании индекса '{index_name}': {e}")
+            LOGGER.exception(f"Ошибка при создании индекса '{index_name}': {e}")
         except BadRequestError as e:
-            logging.exception(f"Ошибка в отправляемых данных '{index_name}': {e}")
+            LOGGER.exception(f"Ошибка в отправляемых данных '{index_name}': {e}")
     else:
-        logging.info(f"Индекс '{index_name}' уже существует")
+        LOGGER.info(f"Индекс '{index_name}' уже существует")
 
 
-def send_to_elastic(batch: Sequence[dict], client: Elasticsearch) -> None:
-    print("Я ТУТ")
+async def send_to_elastic(batch: Sequence[dict], client: AsyncElasticsearch) -> None:
     try:
-        bulk(client, batch)
+        await async_bulk(client, batch)
     except Exception as e:
-        logging.exception(f"Ошибка при создании сущностей в Elastic: {e}")
+        LOGGER.exception(f"Ошибка при создании сущностей в Elastic: {e}")

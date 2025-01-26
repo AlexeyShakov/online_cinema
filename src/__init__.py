@@ -7,3 +7,5 @@ from . import global_vars
 # подробнее читать здесь: https://stackoverflow.com/questions/79258512/sqlalchmey-circular-import-whit-many-to-many-relationship
 from src.films import Film
 from src.person import Person
+
+from .logging import LOGGER
