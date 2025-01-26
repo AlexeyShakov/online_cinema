@@ -17,4 +17,5 @@ async def search_persons(
     person_service: PersonsService = Depends(get_persons_service)
 ):
     search_result = await person_service.search_persons(filter_search, page_size, page_number)
-    return {"message": search_result}
+    # TODO ответ должен соответствовать API из здания, нужно подправить
+    return {"data": search_result}
