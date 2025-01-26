@@ -4,7 +4,7 @@ from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import RequestError,BadRequestError
 from elasticsearch.helpers import async_bulk
 
-from src import LOGGER
+from src.logging_config import LOGGER
 
 
 async def create_index(mapping: dict, index_name: str, es_client: AsyncElasticsearch) -> None:

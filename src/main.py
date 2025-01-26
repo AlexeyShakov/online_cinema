@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from src.films import MOVIE_ROUTES
 from src.person import ACTOR_ROUTES
 
-from src import Film, Person, global_vars, LOGGER
+from src import Film, Person, global_vars
+from src.logging_config import LOGGER
 from src.utils import migrate_entities_to_elastic
 from src.elasticsearch import (
     create_index,

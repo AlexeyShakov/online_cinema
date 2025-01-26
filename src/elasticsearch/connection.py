@@ -1,7 +1,7 @@
-from elasticsearch import Elasticsearch, AsyncElasticsearch
+from elasticsearch import AsyncElasticsearch
 
 from . import config
-from src import LOGGER
+from src.logging_config import LOGGER
 
 
 __ES_CLIENT = None
