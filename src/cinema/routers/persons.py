@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Query, Depends
 
-from src.person.service import PersonsService, get_persons_service
+from src.cinema.services import PersonsService, get_persons_service
 
 
-ACTOR_ROUTES = APIRouter(
-    prefix="/person",
+PERSON_ROUTES = APIRouter(
+    prefix="/actors",
     tags=["Actors"]
 )
 
 
-@ACTOR_ROUTES.get("/search")
+@PERSON_ROUTES.get("/search", description="Search Actors")
 async def search_persons(
     filter_search: str = Query(..., alias="filter[search]", description="Search term for full-text search"),
     page_number: int = Query(1, alias="page[number]", description="Page number for pagination"),

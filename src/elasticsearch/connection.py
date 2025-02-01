@@ -28,6 +28,7 @@ async def _check_health(client: AsyncElasticsearch):
     health = await client.cluster.health()
     LOGGER.info(f"Успешное подключение к Elastic. Проверка health: {health['status']}")
 
+
 async def close_es_connection():
     global __ES_CLIENT
     if __ES_CLIENT:
