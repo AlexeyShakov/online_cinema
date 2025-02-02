@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, List
 
 from fastapi import Depends
 
@@ -6,6 +6,19 @@ from elasticsearch import AsyncElasticsearch
 
 from src.elasticsearch import get_es_connection
 from src.cinema.config import PERSON_INDEX_NAME, FILM_INDEX_NAME
+
+
+async def prepare_data_after_elastic(data: dict, pagination_data: dict) -> dict:
+    """
+    Избавляемся от лишней вложенности(_source) и добавляем информацию о методанных
+    """
+    result = {"meta": {"pagination": pagination_data}}
+    if data:
+        result["data"] = [el["_source"] for el in data]
+    else:
+        result["data"] = []
+    return result
+
 
 
 class FilmRepository:
@@ -21,7 +34,7 @@ class FilmRepository:
         query = {
           "query": {
             "match": {
-              "title": search_value
+              "attributes.title": search_value
             }
           },
           "from": offset,
@@ -29,9 +42,19 @@ class FilmRepository:
         }
         response = await self._search_client.search(
             index=FILM_INDEX_NAME,
-            body=query
+            body=query,
+            filter_path="hits.hits._source,hits.total"
         )
-        return response["hits"]["hits"]
+        result = await prepare_data_after_elastic(
+            data=response["hits"].get("hits"),
+            pagination_data={
+                "offset": offset,
+                "limit": limit,
+                "total": response["hits"]["total"]["value"]
+
+            }
+        )
+        return result
 
 
 class PersonRepository:
@@ -47,7 +70,7 @@ class PersonRepository:
         query = {
           "query": {
             "match": {
-              "full_name": search_value
+              "attributes.name": search_value
             }
           },
           "from": offset,
@@ -55,9 +78,19 @@ class PersonRepository:
         }
         response = await self._search_client.search(
             index=PERSON_INDEX_NAME,
-            body=query
+            body=query,
+            filter_path="hits.hits._source,hits.total"
         )
-        return response["hits"]["hits"]
+        result = await prepare_data_after_elastic(
+            data=response["hits"].get("hits"),
+            pagination_data={
+                "offset": offset,
+                "limit": limit,
+                "total": response["hits"]["total"]["value"]
+
+            }
+        )
+        return result
 
 
 def get_person_repository(

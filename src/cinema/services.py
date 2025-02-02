@@ -15,6 +15,8 @@ class FilmService:
             limit: int,
             offset: int
     ):
+        # films = await self._repository.search_films(search_value, limit, offset)
+        # Нужно добавить информацию о meta
         return await self._repository.search_films(search_value, limit, offset)
 
 

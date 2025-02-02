@@ -6,36 +6,74 @@ settings = {
     "number_of_replicas": config.REPLICA_NUMBER
 }
 
+
 PERSON_MAPPING = {
     "settings": settings,
     "mappings": {
+    "properties": {
+      "type": {"type": "keyword"},
+      "id": {"type": "keyword"},
+      "attributes": {
         "properties": {
-            "person_id": { "type": "keyword" },
-            "full_name": { "type": "text" },
-            "films": {
+          "name": {"type": "text"}
+        }
+      },
+      "relationships": {
+        "properties": {
+          "movies": {
+            "properties": {
+              "data": {
                 "type": "nested",
                 "properties": {
-                    "film_id": { "type": "keyword" },
-                    "title": { "type": "text" }
+                  "type": {
+                    "type": "keyword"
+                  },
+                  "id": {
+                    "type": "keyword"
+                  }
                 }
+              }
             }
+          }
         }
+      }
     }
+  }
 }
+
 
 FILMS_MAPPING = {
     "settings": settings,
     "mappings": {
+    "properties": {
+      "type": {"type": "keyword"},
+      "id": {"type": "keyword"},
+      "attributes": {
         "properties": {
-            "film_id": { "type": "keyword" },
-            "title": { "type": "text" },
-            "persons": {
+          "title": {"type": "text"},
+          "description": {"type": "text"},
+
+        }
+      },
+      "relationships": {
+        "properties": {
+          "actors": {
+            "properties": {
+              "data": {
                 "type": "nested",
                 "properties": {
-                    "person_id": { "type": "keyword" },
-                    "full_name": { "type": "text" }
+                  "type": {
+                    "type": "keyword"
+                  },
+                  "id": {
+                    "type": "keyword"
+                  }
                 }
+              }
             }
+          }
         }
+      }
     }
+  }
 }

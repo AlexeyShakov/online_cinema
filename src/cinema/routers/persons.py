@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query, Depends
 
 from src.cinema.services import PersonsService, get_persons_service
+from src.cinema.schemas import PersonDataResponse
 
 
 PERSON_ROUTES = APIRouter(
@@ -9,7 +10,7 @@ PERSON_ROUTES = APIRouter(
 )
 
 
-@PERSON_ROUTES.get("/search", description="Search Actors")
+@PERSON_ROUTES.get("/search", response_model=PersonDataResponse, description="Search Actors")
 async def search_persons(
     filter_search: str = Query(..., alias="filter[search]", description="Search term for full-text search"),
     page_number: int = Query(1, alias="page[number]", description="Page number for pagination"),
@@ -17,5 +18,4 @@ async def search_persons(
     person_service: PersonsService = Depends(get_persons_service)
 ):
     search_result = await person_service.search_persons(filter_search, page_size, page_number)
-    # TODO ответ должен соответствовать API из здания, нужно подправить
-    return {"data": search_result}
+    return search_result

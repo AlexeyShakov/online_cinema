@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from src import get_db_session, Base, cinema
-from src.elasticsearch import config, send_to_elastic, get_es_connection
+from src.elasticsearch import send_to_elastic, get_es_connection
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -83,15 +83,21 @@ async def _form_person_objs(
         person_obj = {
             "_index": cinema.PERSON_INDEX_NAME,
             "_source": {
-                "person_id": person.id,
-                "full_name": person.full_name
+                "type": "actors",
+                "id": person.id,
+                "attributes": {
+                    "name": person.full_name,
+                },
+                "relationships": {
+                    "movies": {}
+                }
             }
         }
         films = person.films
         person_films = []
         for film in films:
-            person_films.append({"film_id": film.id, "title": film.title})
-        person_obj["_source"]["films"] = person_films
+            person_films.append({"id": film.id, "type": "string"})
+        person_obj["_source"]["relationships"]["movies"]["data"] = person_films
         result.append(person_obj)
     return result
 
@@ -104,14 +110,21 @@ async def _form_film_objs(
         film_obj = {
             "_index": cinema.FILM_INDEX_NAME,
             "_source": {
-                "film_id": film.id,
-                "title": film.title
-            }
+                "id": film.id,
+                "type": "movies",
+                "attributes": {
+                    "title": film.title,
+                    "description": film.description,
+                },
+                "relationships": {
+                    "actors": {}
+                }
+                },
         }
         persons = film.persons
         persons_for_result = []
         for person in persons:
-            persons_for_result.append({"person_id": person.id, "full_name": person.full_name})
-        film_obj["_source"]["persons"] = persons_for_result
+            persons_for_result.append({"id": person.id, "type": "string"})
+        film_obj["_source"]["relationships"]["actors"]["data"] = persons_for_result
         result.append(film_obj)
     return result
