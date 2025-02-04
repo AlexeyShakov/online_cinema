@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 BATCH_SIZE_FOR_TRANSFERRING = int(os.getenv("BATCH_SIZE_FOR_TRANSFERRING", "500"))
 TRANSFER_DATA_TO_ELASTIC = True if os.getenv("TRANSFER_DATA_TO_ELASTIC", "false").lower() == "true" else False

@@ -52,7 +52,7 @@ FILMS_MAPPING = {
         "properties": {
           "title": {"type": "text"},
           "description": {"type": "text"},
-
+          "category_ids": {"type": "keyword"}
         }
       },
       "relationships": {

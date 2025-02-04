@@ -17,6 +17,7 @@ class Relationships(BaseModel):
 class Attributes(BaseModel):
     title: str
     description: Optional[str]
+    category_ids: List[str]
 
 class Movie(BaseModel):
     id: str

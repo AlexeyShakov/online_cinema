@@ -4,6 +4,7 @@ from fastapi import Depends
 
 from elasticsearch import AsyncElasticsearch
 
+from src.cinema.schemas import PersonDataResponse, MoviesResponse
 from src.elasticsearch import get_es_connection
 from src.cinema.config import PERSON_INDEX_NAME, FILM_INDEX_NAME
 
@@ -30,7 +31,7 @@ class FilmRepository:
             search_value: str,
             limit: int,
             offset: int
-        ) -> Sequence:
+        ) -> MoviesResponse:
         query = {
           "query": {
             "match": {
@@ -54,7 +55,7 @@ class FilmRepository:
 
             }
         )
-        return result
+        return MoviesResponse(**result)
 
 
 class PersonRepository:
@@ -66,7 +67,7 @@ class PersonRepository:
             search_value: str,
             limit: int,
             offset: int
-        ) -> Sequence:
+        ) -> PersonDataResponse:
         query = {
           "query": {
             "match": {
@@ -90,7 +91,7 @@ class PersonRepository:
 
             }
         )
-        return result
+        return PersonDataResponse(**result)
 
 
 def get_person_repository(

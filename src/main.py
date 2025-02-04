@@ -32,10 +32,10 @@ async def startup_event():
     if global_vars.TRANSFER_DATA_TO_ELASTIC:
         transfer_tasks = (
             asyncio.Task(
-                migrate_entities_to_elastic(cinema.Person, cinema.FILM_INDEX_NAME, global_vars.BATCH_SIZE_FOR_TRANSFERRING)
+                migrate_entities_to_elastic(cinema.Person, (cinema.FILM_INDEX_NAME, ), global_vars.BATCH_SIZE_FOR_TRANSFERRING)
             ),
             asyncio.Task(
-                migrate_entities_to_elastic(cinema.Film, cinema.PERSON_INDEX_NAME, global_vars.BATCH_SIZE_FOR_TRANSFERRING)
+                migrate_entities_to_elastic(cinema.Film, (cinema.PERSON_INDEX_NAME, "genres"), global_vars.BATCH_SIZE_FOR_TRANSFERRING)
             )
 
         )

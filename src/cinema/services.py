@@ -2,10 +2,10 @@ from fastapi import Depends
 
 from src.cinema import FilmRepository, get_film_repository
 from src.cinema import PersonRepository, get_person_repository
+from src.cinema.schemas import PersonDataResponse, MoviesResponse
 
 
 class FilmService:
-    # TODO может сделать Generic класс для Person и Film?
     def __init__(self, repository: FilmRepository) -> None:
         self._repository = repository
 
@@ -14,9 +14,7 @@ class FilmService:
             search_value: str,
             limit: int,
             offset: int
-    ):
-        # films = await self._repository.search_films(search_value, limit, offset)
-        # Нужно добавить информацию о meta
+    ) -> MoviesResponse:
         return await self._repository.search_films(search_value, limit, offset)
 
 
@@ -29,7 +27,7 @@ class PersonsService:
             search_value: str,
             limit: int,
             offset: int
-    ):
+    ) -> PersonDataResponse:
         return await self._repository.search_persons(search_value, limit, offset)
 
 
