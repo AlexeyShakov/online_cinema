@@ -5,7 +5,7 @@ from fastapi import Depends
 from elasticsearch import AsyncElasticsearch
 
 from src.cinema.schemas import PersonDataResponse, MoviesResponse
-from src.elasticsearch import get_es_connection
+from src.elasticsearch_app import get_es_connection
 from src.cinema.config import PERSON_INDEX_NAME, FILM_INDEX_NAME
 
 

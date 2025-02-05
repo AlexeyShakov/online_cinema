@@ -1,16 +1,18 @@
 from typing import Sequence, Type, Union
+from elasticsearch import AsyncElasticsearch
 
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from src import get_db_session, Base, cinema
-from src.elasticsearch import send_to_elastic, get_es_connection
+from src.elasticsearch_app.utils import send_to_elastic
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def migrate_entities_to_elastic(
         model: Type[Union[cinema.Film, cinema.Person]],
         related_obj_field_names: Sequence[str],
+        es_connection: AsyncElasticsearch,
         batch_size: int,
 ) -> None:
     """
@@ -35,7 +37,6 @@ async def migrate_entities_to_elastic(
             else:
                 raise ValueError("Неизвестный тип сущности для отправки в Elastic!")
             data_for_sending_to_elastic.append(batch_formed_for_elastic)
-            es_connection = await get_es_connection()
             await send_to_elastic(batch_formed_for_elastic, es_connection)
 
 

@@ -1,7 +1,7 @@
 services:
   elasticsearch:
     image: elasticsearch:8.16.3
-    container_name: elasticsearch
+    container_name: elasticsearch_app
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false  # не используем аутентификацию и авторизацию
@@ -12,7 +12,7 @@ services:
     ports:
       - "9200:9200"
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - es_data:/usr/share/elasticsearch_app/data
 
 volumes:
   es_data:

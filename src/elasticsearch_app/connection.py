@@ -1,6 +1,6 @@
 from elasticsearch import AsyncElasticsearch
 
-from . import config
+from src.elasticsearch_app import config
 from src.logging_config import LOGGER
 
 
