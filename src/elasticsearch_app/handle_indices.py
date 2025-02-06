@@ -1,8 +1,5 @@
-from typing import Sequence
 from elasticsearch.exceptions import RequestError,BadRequestError
 from elasticsearch import AsyncElasticsearch
-
-from elasticsearch.helpers import async_bulk
 
 from src.logging_config import LOGGER
 
@@ -18,10 +15,3 @@ async def create_index(mapping: dict, index_name: str, es_client: AsyncElasticse
             LOGGER.exception(f"Ошибка в отправляемых данных '{index_name}': {e}")
     else:
         LOGGER.info(f"Индекс '{index_name}' уже существует")
-
-
-async def send_to_elastic(batch: Sequence[dict], client: AsyncElasticsearch) -> None:
-    try:
-        await async_bulk(client, batch)
-    except Exception as e:
-        LOGGER.exception(f"Ошибка при создании сущностей в Elastic: {e}")

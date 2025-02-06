@@ -2,17 +2,19 @@ import os
 import asyncio
 from elasticsearch import AsyncElasticsearch
 
-from src.elasticsearch_app import get_es_connection, close_es_connection
+from src.elasticsearch_app import get_es_connection, close_es_connection, handle_indices, indices
 from src.elasticsearch_app.migrate_data_to_elastic import migrate_entities_to_elastic
+from src import cinema
+
 from dotenv import load_dotenv
 
-from src.cinema import Film, Person
 
 load_dotenv()
 
+
 ALLOWED_MODELS_MAPPER = {
-    "FILM": Film,
-    "PERSON": Person
+    "FILM": cinema.Film,
+    "PERSON": cinema.Person
 }
 
 async def start_migration():
@@ -55,3 +57,15 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch):
             related_fields = related_fields.split(",")
         arguments.append((model, related_fields, es_connection, batch_size))
     return arguments
+
+
+async def create_indices() -> None:
+    es_connection = await get_es_connection()
+    tasks = (
+        asyncio.Task(handle_indices.create_index(indices.PERSON_MAPPING, cinema.PERSON_INDEX_NAME, es_connection)),
+        asyncio.Task(handle_indices.create_index(indices.FILMS_MAPPING, cinema.FILM_INDEX_NAME, es_connection))
+    )
+    try:
+        await asyncio.gather(*tasks)
+    finally:
+        await close_es_connection()
