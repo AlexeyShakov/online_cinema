@@ -1,46 +1,92 @@
+from typing import Optional, Type
+from dataclasses import asdict
+
 from elasticsearch import AsyncElasticsearch
 
 from src.elasticsearch_app import config
+from src import utils
+from src.elasticsearch_app.dataclasses import ESConnectionSettings
 from src.logging_config import LOGGER
 
 
-__ES_CLIENT = None
+class ElasticConnectionHandler:
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.__instance:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
+
+    def __init__(self, connection_params: ESConnectionSettings):
+        self.__connection_params = connection_params
+        self.__connection: Optional[AsyncElasticsearch] = None
+
+    async def get_connection(self) -> AsyncElasticsearch:
+        if not self.__connection:
+            await self._initialize_connection(self.__connection_params)
+        else:
+            await self._check_existing_connection(self.__connection)
+        return self.__connection
+
+    @utils.retry(num=3, delay=1)
+    async def _initialize_connection(self, connection_params: ESConnectionSettings) -> bool:
+        connection = AsyncElasticsearch(**asdict(connection_params))
+        if not await self._check_cluster_health(connection):
+            await connection.close()
+            return False
+        else:
+            self.__connection = connection
+            return True
+
+    async def _check_cluster_health(self, connection: AsyncElasticsearch) -> bool:
+        try:
+            health = await connection.cluster.health()
+            status = health.get("status", "unknown")
+
+            if status in {"green", "yellow"}:
+                LOGGER.info(f"Соединение с Elastic установлено. Статус: {status}")
+                return True
+            else:
+                LOGGER.warning(f"Соединение с Elastic не установлено: {status}")
+                return False
+        except Exception as e:
+            LOGGER.exception(f"Elastic не доступен: {e}")
+            return False
+
+    async def _check_existing_connection(self, connection: AsyncElasticsearch) -> None:
+        try:
+            is_alive = await self._is_connection_alive(connection)
+        except Exception:
+            is_alive = False
+        if not is_alive:
+            await self._initialize_connection(self.__connection_params)
+
+    @utils.retry(num=3, delay=0.1)
+    async def _is_connection_alive(self, connection: AsyncElasticsearch) -> bool:
+        try:
+            return await connection.ping()
+        except Exception as e:
+            LOGGER.exception(f"Соединение с Elastic потеряно: {e}")
+            return False
+
+    async def close_es_connection(self) -> None:
+        try:
+            if await self._is_connection_alive(self.__connection):
+                await self.__connection.close()
+                LOGGER.info("Соединение с Elastic успешно закрыто")
+            else:
+                LOGGER.info("Соединение с Elastic уже было закрыто")
+        except Exception as e:
+            LOGGER.exception(f"Ошибка при проверки Elastic соединения: {e}")
 
 
-async def get_es_connection():
-    """
-    Нужно переделать с lru_cache(functools):
-
-    Что делать: Создать класс, который отвесчает за логику с соединением с Elastic. Там нужно проверять, что подключение ок, если не
-    ок, то закрывать-создавать новое подключение. Этот прием называется Ресурс. Нужно сделать так, чтобы этот класс
-    был создан только один раз
-    """
-    global __ES_CLIENT
-    # TODO нужно ли создавать класс-обертку над Elasticsearch
-    if not __ES_CLIENT:
-        __ES_CLIENT = AsyncElasticsearch(hosts=[config.ELASTIC_URL])
-        await _check_health(__ES_CLIENT)
-    return __ES_CLIENT
+__ES_CONNECTION_HANDLER = ElasticConnectionHandler(ESConnectionSettings(hosts=[config.ELASTIC_URL]))
 
 
-async def reconnect_to_es():
-    global __ES_CLIENT
-    new_client = AsyncElasticsearch(hosts=[config.ELASTIC_URL])
-    await _check_health(new_client)
-    __ES_CLIENT = new_client
-    LOGGER.info("Новое соединение к Elastic усспешно установлено")
+async def get_es_connection() -> AsyncElasticsearch:
+    return await __ES_CONNECTION_HANDLER.get_connection()
 
 
-async def _check_health(client: AsyncElasticsearch):
-    health = await client.cluster.health()
-    LOGGER.info(f"Успешное подключение к Elastic. Проверка health: {health['status']}")
+async def close_es_connection() -> None:
+    await __ES_CONNECTION_HANDLER.close_es_connection()
 
-
-async def close_es_connection():
-    global __ES_CLIENT
-    if __ES_CLIENT:
-        await __ES_CLIENT.close()
-        LOGGER.info("Соединение с Elastic успешно закрыто")
-        __ES_CLIENT = None
-    else:
-        LOGGER.info("Соединение с Elastic уже закрыто")
