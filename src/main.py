@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from src import global_vars, cinema
+from src import cinema
 from src.elasticsearch_app import close_es_connection, get_es_connection
 
 

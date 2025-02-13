@@ -1,2 +1,2 @@
-from .persons import PERSON_ROUTES
-from .films import MOVIE_ROUTES
+from .persons import person_routes
+from .films import movie_routes

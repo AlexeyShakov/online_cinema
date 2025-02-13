@@ -1,5 +1,3 @@
-from typing import Sequence, List
-
 from fastapi import Depends
 
 from elasticsearch import AsyncElasticsearch
@@ -11,7 +9,7 @@ from src.cinema.config import PERSON_INDEX_NAME, FILM_INDEX_NAME
 
 async def prepare_data_after_elastic(data: dict, pagination_data: dict) -> dict:
     """
-    Избавляемся от лишней вложенности(_source) и добавляем информацию о методанных
+    Избавляемся от лишней вложенности(_source) и добавляем информацию о метаданных
     """
     result = {"meta": {"pagination": pagination_data}}
     if data:
@@ -21,25 +19,23 @@ async def prepare_data_after_elastic(data: dict, pagination_data: dict) -> dict:
     return result
 
 
-
 class FilmRepository:
     def __init__(self, es_client: AsyncElasticsearch):
         self._search_client = es_client
 
-    async def search_films(
-            self,
-            search_value: str,
-            limit: int,
-            offset: int
-        ) -> MoviesResponse:
+    async def search_films(self,
+                           search_value: str,
+                           limit: int,
+                           offset: int
+                           ) -> MoviesResponse:
         query = {
-          "query": {
-            "match": {
-              "attributes.title": search_value
-            }
-          },
-          "from": offset,
-          "size": limit
+            "query": {
+                "match": {
+                    "attributes.title": search_value
+                }
+            },
+            "from": offset,
+            "size": limit
         }
         response = await self._search_client.search(
             index=FILM_INDEX_NAME,
@@ -67,15 +63,15 @@ class PersonRepository:
             search_value: str,
             limit: int,
             offset: int
-        ) -> PersonDataResponse:
+    ) -> PersonDataResponse:
         query = {
-          "query": {
-            "match": {
-              "attributes.name": search_value
-            }
-          },
-          "from": offset,
-          "size": limit
+            "query": {
+                "match": {
+                    "attributes.name": search_value
+                }
+            },
+            "from": offset,
+            "size": limit
         }
         response = await self._search_client.search(
             index=PERSON_INDEX_NAME,
@@ -95,12 +91,12 @@ class PersonRepository:
 
 
 def get_person_repository(
-    es_client: AsyncElasticsearch = Depends(get_es_connection)
+        es_client: AsyncElasticsearch = Depends(get_es_connection)
 ) -> PersonRepository:
     return PersonRepository(es_client=es_client)
 
 
 def get_film_repository(
-    es_client: AsyncElasticsearch = Depends(get_es_connection)
+        es_client: AsyncElasticsearch = Depends(get_es_connection)
 ) -> FilmRepository:
     return FilmRepository(es_client=es_client)

@@ -1,7 +1,7 @@
 from typing import List
 from pydantic import BaseModel
 
-from src import Meta
+from src.schemas import Meta
 
 class MovieData(BaseModel):
     id: str

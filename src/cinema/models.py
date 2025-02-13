@@ -1,4 +1,5 @@
-from src import Base, DateTimeWithTZ
+from src.models import Base
+from src.database import DateTimeWithTZ
 
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import Text, Date, ForeignKey
@@ -53,8 +54,6 @@ class Genre(Base):
     description: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTimeWithTZ)
     updated_at: Mapped[datetime] = mapped_column(DateTimeWithTZ)
-
-    films: Mapped[List[Film]] = relationship(secondary="genre_film_work", back_populates="genres")
 
 
 class MovieGenreRelation(Base):

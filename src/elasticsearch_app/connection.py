@@ -1,4 +1,5 @@
-from typing import Optional, Type
+from typing import Optional
+import backoff
 from dataclasses import asdict
 
 from elasticsearch import AsyncElasticsearch
@@ -28,7 +29,8 @@ class ElasticConnectionHandler:
             await self._check_existing_connection(self.__connection)
         return self.__connection
 
-    @utils.retry(num=3, delay=1)
+    @backoff.on_predicate(backoff.expo, lambda x: x is False, interval=0.5 ,max_tries=3)
+    @backoff.on_exception(backoff.expo, Exception, interval=0.5, max_tries=3)
     async def _initialize_connection(self, connection_params: ESConnectionSettings) -> bool:
         connection = AsyncElasticsearch(**asdict(connection_params))
         if not await self._check_cluster_health(connection):
@@ -61,7 +63,8 @@ class ElasticConnectionHandler:
         if not is_alive:
             await self._initialize_connection(self.__connection_params)
 
-    @utils.retry(num=3, delay=0.1)
+    @backoff.on_predicate(backoff.expo, lambda x: x is False, interval=0.5 ,max_tries=3)
+    @backoff.on_exception(backoff.expo, Exception, interval=0.5, max_tries=3)
     async def _is_connection_alive(self, connection: AsyncElasticsearch) -> bool:
         try:
             return await connection.ping()
