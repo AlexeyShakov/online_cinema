@@ -5,7 +5,6 @@ from dataclasses import asdict
 from elasticsearch import AsyncElasticsearch
 
 from src.elasticsearch_app import config
-from src import utils
 from src.elasticsearch_app.dataclasses import ESConnectionSettings
 from src.logging_config import LOGGER
 
