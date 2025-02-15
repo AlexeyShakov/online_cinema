@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from src import cinema
-from src.elasticsearch_app import close_es_connection, get_es_connection
+from src.elasticsearch_app import close_es_connection
 
 
 app = FastAPI()

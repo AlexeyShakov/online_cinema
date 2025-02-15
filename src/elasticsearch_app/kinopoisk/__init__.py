@@ -1,0 +1,1 @@
+from .migrate_to_elastic import process_kinopoisk_data

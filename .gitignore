@@ -30,3 +30,5 @@ commands.txt
 # Cache directories
 *.egg-info/
 .cache/
+
+*.csv
