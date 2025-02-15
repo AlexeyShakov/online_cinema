@@ -1,8 +1,9 @@
-from datetime import datetime
-from typing import Sequence, Type
+from datetime import datetime, timezone
+from typing import Sequence
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-
+from sqlalchemy.orm import selectinload
 
 from src.cinema.schemas import PersonDataResponse, MoviesResponse
 from src import cinema
@@ -67,11 +68,13 @@ class FilmRepository:
     @classmethod
     async def create_film_genre_relations(cls, films: FILMS, session: AsyncSession) -> None:
         genre = await cls._get_genre(session)
+        today_datetime = datetime.utcnow().replace(tzinfo=timezone.utc)
+        today_datetime = today_datetime.strftime("%Y-%m-%d %H:%M:%S.%f+00")
         relations = [
             cinema.MovieGenreRelation(
                 film_work_id=film.id,
                 genre_id=genre.id,
-                created_at=datetime.utcnow(),
+                created_at=today_datetime,
             )
             for film in films
         ]
@@ -90,6 +93,18 @@ class FilmRepository:
                                            session: AsyncSession) -> None:
         session.add_all(relations)
         await session.commit()
+
+    @staticmethod
+    async def fetch_with_related_fields(films: FILMS, related_fields: Sequence[str], session: AsyncSession) -> FILMS:
+        film_ids = [film.id for film in films]
+        options = [selectinload(getattr(cinema.Film, field)) for field in related_fields]
+        stmt = (
+            select(cinema.Film)
+            .options(*options)
+            .where(cinema.Film.id.in_(film_ids))
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
 
 class PersonRepository:
@@ -131,10 +146,22 @@ class PersonRepository:
         await session.commit()
         return persons
 
+    @staticmethod
+    async def fetch_with_related_fields(persons: PERSONS, related_fields: Sequence[str], session: AsyncSession) -> PERSONS:
+        person_ids = [person.id for person in persons]
+        options = [selectinload(getattr(cinema.Person, field)) for field in related_fields]
+        stmt = (
+            select(cinema.Person)
+            .options(*options)
+            .where(cinema.Person.id.in_(person_ids))
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
-def get_person_repository() -> Type[PersonRepository]:
-    return PersonRepository
+
+def get_person_repository() -> PersonRepository:
+    return PersonRepository()
 
 
-def get_film_repository() -> Type[FilmRepository]:
-    return FilmRepository
+def get_film_repository() -> FilmRepository:
+    return FilmRepository()

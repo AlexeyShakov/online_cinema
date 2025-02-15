@@ -2,7 +2,8 @@ import os
 import asyncio
 from elasticsearch import AsyncElasticsearch
 
-from src.elasticsearch_app import get_es_connection, close_es_connection, handle_indices, indices
+from src.elasticsearch_app import get_es_connection, close_es_connection, indices
+from src.elasticsearch_app.elastic_communication import get_elastic_communicator
 from src.elasticsearch_app.migrate_data_to_elastic import migrate_entities_to_elastic
 from src import cinema
 
@@ -61,9 +62,10 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch):
 
 async def create_indices() -> None:
     es_connection = await get_es_connection()
+    elastic_communicator = await get_elastic_communicator()
     tasks = (
-        asyncio.Task(handle_indices.create_index(indices.PERSON_MAPPING, cinema.PERSON_INDEX_NAME, es_connection)),
-        asyncio.Task(handle_indices.create_index(indices.FILMS_MAPPING, cinema.FILM_INDEX_NAME, es_connection))
+        asyncio.Task(elastic_communicator.create_index(indices.PERSON_MAPPING, cinema.PERSON_INDEX_NAME, es_connection)),
+        asyncio.Task(elastic_communicator.create_index(indices.FILMS_MAPPING, cinema.FILM_INDEX_NAME, es_connection))
     )
     try:
         await asyncio.gather(*tasks)

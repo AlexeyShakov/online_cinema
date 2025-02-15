@@ -1,13 +1,15 @@
 import asyncio
 import os
 from typing import Set, Dict, List, Literal, Sequence
-from datetime import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone
 
 import pandas as pd
 
 from src import cinema
 from src.database import get_db_session
+from src.elasticsearch_app.connection import get_es_connection
+from src.elasticsearch_app.elastic_communication import get_elastic_communicator
+from src.logging_config import LOGGER
 
 FILMS = Sequence[cinema.Film]
 PERSONS = Sequence[cinema.Person]
@@ -26,23 +28,34 @@ class KinopoiskDataMigrator:
         self._for_creating_movies: List[cinema.Film] = []
 
     async def process(self):
-        today_datetime = datetime.utcnow()
+        today_datetime = datetime.utcnow().replace(tzinfo=timezone.utc)
+        today_datetime = today_datetime.strftime("%Y-%m-%d %H:%M:%S.%f+00")
+
         await self._prepare_data_for_creating(self._df, today_datetime)
         films, persons = await asyncio.gather(
             asyncio.Task(self._create_films(self._for_creating_movies)),
             asyncio.Task(self._create_persons(self._for_creating_persons))
         )
+        LOGGER.info("Создали фильмы и персоны в мастер БД")
         await asyncio.gather(
             asyncio.Task(self._create_film_genre_relations(films)),
-            asyncio.Task(self._create_film_person_relation(films, persons, self._films_persons_relation, today_datetime))
+            asyncio.Task(
+                self._create_film_person_relation(films, persons, self._films_persons_relation, today_datetime))
         )
+        films, persons = await asyncio.gather(
+            asyncio.Task(self._get_films_with_related_data(films)),
+            asyncio.Task(self._get_persons_with_related_data(persons)),
+        )
+        LOGGER.info("Создали связи фильмов с жанрами и персонами")
+        await self._send_to_elastic(films, persons)
+        LOGGER.info("Отправили данные в эластик")
 
-    async def _prepare_data_for_creating(self, df: pd.DataFrame, today_datetime: datetime) -> None:
+    async def _prepare_data_for_creating(self, df: pd.DataFrame, today_datetime: str) -> None:
         for index, row in df.iterrows():
             await self._prepare_films(row, today_datetime)
             await self._prepare_all_persons_types(row, today_datetime)
 
-    async def _prepare_films(self, row, current_datetime: datetime):
+    async def _prepare_films(self, row, current_datetime: str):
         movie_title = row["movie"]
         self._films_persons_relation[movie_title] = {}
         movie = cinema.Film(
@@ -58,13 +71,13 @@ class KinopoiskDataMigrator:
         self._for_creating_movies.append(movie)
         self._films.append(movie_title)
 
-    async def _prepare_all_persons_types(self, row, current_datetime: datetime) -> None:
+    async def _prepare_all_persons_types(self, row, current_datetime: str) -> None:
         movie = row["movie"]
         await self._prepare_persons(row["director"].split(";"), current_datetime, movie, "director")
         await self._prepare_persons(row["screenwriter"].split(";"), current_datetime, movie, "writer")
         await self._prepare_persons(row["actors"].split(";"), current_datetime, movie, "actor")
 
-    async def _prepare_persons(self, persons: List[str], current_datetime: datetime, movie: str,
+    async def _prepare_persons(self, persons: List[str], current_datetime: str, movie: str,
                                role: Literal["actor", "director", "writer"]) -> None:
         for person in persons:
             person = person.strip()
@@ -97,7 +110,7 @@ class KinopoiskDataMigrator:
 
     async def _create_film_person_relation(self, films: FILMS, persons: PERSONS,
                                            film_person_relation: FILM_PERSON_RELATION,
-                                           today_datetime: datetime) -> None:
+                                           today_datetime: str) -> None:
         persons_by_full_name = {person.full_name: person for person in persons}
         for_bulk_creation = []
         for film in films:
@@ -114,6 +127,24 @@ class KinopoiskDataMigrator:
                     for_bulk_creation.append(relation_obj)
         async for session in get_db_session():
             await cinema.FilmRepository.create_film_person_relations(for_bulk_creation, session)
+
+    async def _send_to_elastic(self, films: FILMS, persons: PERSONS) -> None:
+        elastic_communicator = await get_elastic_communicator()
+        films_data = await elastic_communicator.form_film_objs(films)
+        persons_data = await elastic_communicator.form_person_objs(persons)
+        es_connection = await get_es_connection()
+        await asyncio.gather(
+            asyncio.Task(elastic_communicator.send_to_elastic(films_data, es_connection)),
+            asyncio.Task(elastic_communicator.send_to_elastic(persons_data, es_connection)),
+        )
+
+    async def _get_films_with_related_data(self, films: FILMS) -> FILMS:
+        async for session in get_db_session():
+            return await cinema.FilmRepository.fetch_with_related_fields(films, ("genres", "persons"), session)
+
+    async def _get_persons_with_related_data(self, persons: PERSONS) -> PERSONS:
+        async for session in get_db_session():
+            return await cinema.PersonRepository.fetch_with_related_fields(persons, ("films", ), session)
 
 
 async def process_kinopoisk_data():
