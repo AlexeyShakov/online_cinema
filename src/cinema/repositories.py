@@ -36,8 +36,10 @@ class FilmRepository:
         elastic_client = await get_es_connection()
         query = {
             "query": {
-                "match": {
-                    "attributes.title": search_value
+                "multi_match": {
+                    "query": search_value,
+                    "type": "best_fields",
+                    "fields": ["attributes.title_ru", "attributes.title_en"]
                 }
             },
             "from": offset,
@@ -117,8 +119,10 @@ class PersonRepository:
         elastic_client = await get_es_connection()
         query = {
             "query": {
-                "match": {
-                    "attributes.name": search_value
+                "multi_match": {
+                    "query": search_value,
+                    "type": "best_fields",
+                    "fields": ["attributes.name_ru", "attributes.name_en"]
                 }
             },
             "from": offset,

@@ -132,8 +132,9 @@ class KinopoiskDataMigrator:
 
     async def _send_to_elastic(self, films: FILMS, persons: PERSONS, es_connection: AsyncElasticsearch) -> None:
         elastic_communicator = await get_elastic_communicator()
-        films_data = await elastic_communicator.form_film_objs(films)
-        persons_data = await elastic_communicator.form_person_objs(persons)
+        language = "ru"
+        films_data = await elastic_communicator.form_film_objs(films, language)
+        persons_data = await elastic_communicator.form_person_objs(persons, language)
         await asyncio.gather(
             asyncio.Task(elastic_communicator.send_to_elastic(films_data, es_connection)),
             asyncio.Task(elastic_communicator.send_to_elastic(persons_data, es_connection)),

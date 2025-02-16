@@ -1,4 +1,4 @@
-from typing import Sequence, Type, Union
+from typing import Sequence, Type, Union, Literal
 from elasticsearch import AsyncElasticsearch
 
 from sqlalchemy import select, func
@@ -16,6 +16,7 @@ async def migrate_entities_to_elastic(
         related_obj_field_names: Sequence[str],
         es_connection: AsyncElasticsearch,
         batch_size: int,
+        language: Literal["ru", "en"]
 ) -> None:
     """
     Пример объекта на примере персоны(Person):
@@ -34,9 +35,9 @@ async def migrate_entities_to_elastic(
         elastic_communicator = await get_elastic_communicator()
         async for batch in _get_batches(batch_size, session, model, related_obj_field_names, row_total_count):
             if model is cinema.Person:
-                batch_formed_for_elastic = await elastic_communicator.form_person_objs(batch)
+                batch_formed_for_elastic = await elastic_communicator.form_person_objs(batch, language)
             elif model is cinema.Film:
-                batch_formed_for_elastic = await elastic_communicator.form_film_objs(batch)
+                batch_formed_for_elastic = await elastic_communicator.form_film_objs(batch, language)
             else:
                 raise ValueError("Неизвестный тип сущности для отправки в Elastic!")
             await elastic_communicator.send_to_elastic(batch_formed_for_elastic, es_connection)

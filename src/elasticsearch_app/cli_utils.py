@@ -43,6 +43,7 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch):
                             MODELS_TO_TRANSFER_DATA_FROM=FILM,PERSON, то в .env должны быть еще такие переменные:
                             PERSON_RELATED_FIELDS и FILM_RELATED_FIELDS
     """
+    language = "en"
     arguments = [] # [(model, related_obj_fields, batch_size), (), ...]
     batch_size = int(os.getenv("TRANSFER_BATCH_SIZE", 500))
     models_to_transfer_data_from = os.getenv("MODELS_TO_TRANSFER_DATA_FROM")
@@ -56,7 +57,7 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch):
         related_fields = os.getenv(f"{model_name}_RELATED_FIELDS", [])
         if related_fields:
             related_fields = related_fields.split(",")
-        arguments.append((model, related_fields, es_connection, batch_size))
+        arguments.append((model, related_fields, es_connection, batch_size, language))
     return arguments
 
 

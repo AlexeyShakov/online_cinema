@@ -1,4 +1,4 @@
-from typing import Sequence, Type
+from typing import Sequence, Type, Literal
 from elasticsearch.exceptions import RequestError, BadRequestError
 from elasticsearch import AsyncElasticsearch
 
@@ -31,16 +31,23 @@ class ElasticCommunicator:
             LOGGER.exception(f"Ошибка при создании сущностей в Elastic: {e}")
 
     @staticmethod
-    async def form_person_objs(persons: Sequence[cinema.Person]) -> Sequence[dict]:
+    async def form_person_objs(persons: Sequence[cinema.Person], language: Literal["ru", "en"]) -> Sequence[dict]:
         result = []
         for person in persons:
+            name_ru = ""
+            name_en = ""
+            if language == "ru":
+                name_ru = person.full_name
+            else:
+                name_en = person.full_name
             person_obj = {
                 "_index": cinema.PERSON_INDEX_NAME,
                 "_source": {
                     "type": "actors",
                     "id": person.id,
                     "attributes": {
-                        "name": person.full_name,
+                        "name_ru": name_ru,
+                        "name_en": name_en
                     },
                     "relationships": {
                         "movies": {}
@@ -56,9 +63,15 @@ class ElasticCommunicator:
         return result
 
     @staticmethod
-    async def form_film_objs(films: Sequence[cinema.Film]) -> Sequence[dict]:
+    async def form_film_objs(films: Sequence[cinema.Film], language: Literal["ru", "en"]) -> Sequence[dict]:
         result = []
         for film in films:
+            title_en = ""
+            title_ru = ""
+            if language == "ru":
+                title_ru = film.title
+            else:
+                title_en = film.title
             film_obj = {
                 "_index": cinema.FILM_INDEX_NAME,
                 "_id": str(film.id),
@@ -66,7 +79,8 @@ class ElasticCommunicator:
                     "id": str(film.id),
                     "type": "movies",
                     "attributes": {
-                        "title": film.title,
+                        "title_ru": title_ru,
+                        "title_en": title_en,
                         "description": film.description,
                     },
                     "relationships": {
