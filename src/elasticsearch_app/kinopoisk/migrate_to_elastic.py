@@ -2,12 +2,13 @@ import asyncio
 import os
 from typing import Set, Dict, List, Literal, Sequence
 from datetime import datetime, timezone
+from elasticsearch import AsyncElasticsearch
 
 import pandas as pd
 
 from src import cinema
 from src.database import get_db_session
-from src.elasticsearch_app.connection import get_es_connection
+from src.elasticsearch_app.connection import get_es_connection, close_es_connection
 from src.elasticsearch_app.elastic_communication import get_elastic_communicator
 from src.logging_config import LOGGER
 
@@ -17,8 +18,9 @@ FILM_PERSON_RELATION = Dict[str, Dict[str, List[str]]]
 
 
 class KinopoiskDataMigrator:
-    def __init__(self, df: pd.DataFrame) -> None:
+    def __init__(self, df: pd.DataFrame, es_connection: AsyncElasticsearch) -> None:
         self._df = df
+        self._es_connection = es_connection
 
         self._unique_persons: Set[str] = set()
         self._films: List[str] = []
@@ -47,7 +49,7 @@ class KinopoiskDataMigrator:
             asyncio.Task(self._get_persons_with_related_data(persons)),
         )
         LOGGER.info("Создали связи фильмов с жанрами и персонами")
-        await self._send_to_elastic(films, persons)
+        await self._send_to_elastic(films, persons, self._es_connection)
         LOGGER.info("Отправили данные в эластик")
 
     async def _prepare_data_for_creating(self, df: pd.DataFrame, today_datetime: str) -> None:
@@ -128,11 +130,10 @@ class KinopoiskDataMigrator:
         async for session in get_db_session():
             await cinema.FilmRepository.create_film_person_relations(for_bulk_creation, session)
 
-    async def _send_to_elastic(self, films: FILMS, persons: PERSONS) -> None:
+    async def _send_to_elastic(self, films: FILMS, persons: PERSONS, es_connection: AsyncElasticsearch) -> None:
         elastic_communicator = await get_elastic_communicator()
         films_data = await elastic_communicator.form_film_objs(films)
         persons_data = await elastic_communicator.form_person_objs(persons)
-        es_connection = await get_es_connection()
         await asyncio.gather(
             asyncio.Task(elastic_communicator.send_to_elastic(films_data, es_connection)),
             asyncio.Task(elastic_communicator.send_to_elastic(persons_data, es_connection)),
@@ -148,8 +149,10 @@ class KinopoiskDataMigrator:
 
 
 async def process_kinopoisk_data():
+    es_connection = await get_es_connection()
     script_dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(script_dir, 'kinopoisk-top250.csv')
     df = pd.read_csv(file_path, usecols=('rating_ball', 'movie', "overview", "director", "actors", "screenwriter"))
-    migrator = KinopoiskDataMigrator(df)
+    migrator = KinopoiskDataMigrator(df, es_connection)
     await migrator.process()
+    await close_es_connection()

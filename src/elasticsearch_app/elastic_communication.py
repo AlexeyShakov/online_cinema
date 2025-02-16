@@ -61,8 +61,9 @@ class ElasticCommunicator:
         for film in films:
             film_obj = {
                 "_index": cinema.FILM_INDEX_NAME,
+                "_id": str(film.id),
                 "_source": {
-                    "id": film.id,
+                    "id": str(film.id),
                     "type": "movies",
                     "attributes": {
                         "title": film.title,

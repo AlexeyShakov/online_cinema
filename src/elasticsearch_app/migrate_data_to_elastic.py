@@ -1,13 +1,13 @@
 from typing import Sequence, Type, Union
 from elasticsearch import AsyncElasticsearch
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from src.models import Base
 from src.database import get_db_session
 from src import cinema
-from src.elasticsearch_app.utils import send_to_elastic
+from src.elasticsearch_app.elastic_communication import get_elastic_communicator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -30,16 +30,16 @@ async def migrate_entities_to_elastic(
     }
     """
     async for session in get_db_session():
-        data_for_sending_to_elastic = []
-        async for batch in _get_batches(batch_size, session, model, related_obj_field_names):
+        row_total_count = await get_row_total_count(session, model)
+        elastic_communicator = await get_elastic_communicator()
+        async for batch in _get_batches(batch_size, session, model, related_obj_field_names, row_total_count):
             if model is cinema.Person:
-                batch_formed_for_elastic = await _form_person_objs(batch)
+                batch_formed_for_elastic = await elastic_communicator.form_person_objs(batch)
             elif model is cinema.Film:
-                batch_formed_for_elastic = await _form_film_objs(batch)
+                batch_formed_for_elastic = await elastic_communicator.form_film_objs(batch)
             else:
                 raise ValueError("Неизвестный тип сущности для отправки в Elastic!")
-            data_for_sending_to_elastic.append(batch_formed_for_elastic)
-            await send_to_elastic(batch_formed_for_elastic, es_connection)
+            await elastic_communicator.send_to_elastic(batch_formed_for_elastic, es_connection)
 
 
 async def _get_batches(
@@ -47,9 +47,11 @@ async def _get_batches(
         session: AsyncSession,
         model: Type[Union[cinema.Film, cinema.Person]],
         related_obj_field_names: Sequence[str],
-        ) -> Sequence[Base]:
+        row_total_count: int
+) -> Sequence[Base]:
     start = 0
-    while True:
+
+    while start < row_total_count:
         entities = await _get_entities(
             model=model,
             related_obj_field_names=related_obj_field_names,
@@ -57,9 +59,6 @@ async def _get_batches(
             start=start,
             session=session
         )
-        if not entities:
-            break
-
         yield entities
         start += batch_size
 
@@ -82,62 +81,7 @@ async def _get_entities(
     return result.all()
 
 
-async def _form_person_objs(
-        persons: Sequence[cinema.Person],
-) -> Sequence[dict]:
-    result = []
-    for person in persons:
-        person_obj = {
-            "_index": cinema.PERSON_INDEX_NAME,
-            "_source": {
-                "type": "actors",
-                "id": person.id,
-                "attributes": {
-                    "name": person.full_name,
-                },
-                "relationships": {
-                    "movies": {}
-                }
-            }
-        }
-        films = person.films
-        person_films = []
-        for film in films:
-            person_films.append({"id": film.id, "type": "string"})
-        person_obj["_source"]["relationships"]["movies"]["data"] = person_films
-        result.append(person_obj)
-    return result
-
-
-async def _form_film_objs(
-        films: Sequence[cinema.Film],
-) -> Sequence[dict]:
-    result = []
-    for film in films:
-        film_obj = {
-            "_index": cinema.FILM_INDEX_NAME,
-            "_source": {
-                "id": film.id,
-                "type": "movies",
-                "attributes": {
-                    "title": film.title,
-                    "description": film.description,
-                },
-                "relationships": {
-                    "actors": {}
-                }
-                },
-        }
-        genres = film.genres
-        genres_for_result = []
-        for genre in genres:
-            genres_for_result.append(genre.id)
-        film_obj["_source"]["attributes"]["category_ids"] = genres_for_result
-
-        persons = film.persons
-        persons_for_result = []
-        for person in persons:
-            persons_for_result.append({"id": person.id, "type": "string"})
-        film_obj["_source"]["relationships"]["actors"]["data"] = persons_for_result
-        result.append(film_obj)
-    return result
+async def get_row_total_count(session: AsyncSession, model: Type[Union[cinema.Film, cinema.Person]]) -> int:
+    total_count_stmt = select(func.count()).select_from(model)
+    result = await session.execute(total_count_stmt)
+    return result.scalar_one()
