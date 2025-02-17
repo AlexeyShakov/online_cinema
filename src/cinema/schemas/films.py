@@ -15,7 +15,8 @@ class Relationships(BaseModel):
     actors: ActorsRelationship
 
 class Attributes(BaseModel):
-    title: str
+    title_ru: str
+    title_en: str
     description: Optional[str]
     category_ids: List[str]
 

@@ -126,7 +126,7 @@ class PersonRepository:
                 }
             },
             "from": offset,
-            "size": limit
+            "size": limit,
         }
         response = await elastic_client.search(
             index=PERSON_INDEX_NAME,

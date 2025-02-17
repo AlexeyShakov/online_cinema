@@ -11,7 +11,8 @@ class MoviesRelationship(BaseModel):
     data: List[MovieData]
 
 class ActorAttributes(BaseModel):
-    name: str
+    name_ru: str
+    name_en: str
 
 class ActorRelationships(BaseModel):
     movies: MoviesRelationship

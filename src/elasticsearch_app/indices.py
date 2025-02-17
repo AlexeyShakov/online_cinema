@@ -5,16 +5,73 @@ settings = {
     "number_of_replicas": config.REPLICA_NUMBER,
 }
 
+
 PERSON_MAPPING = {
-    "settings": settings,
+    "settings": {
+        "analysis": {
+            "filter": {
+                "russian_stop": {
+                    "type": "stop",
+                    "stopwords": "_russian_"
+                },
+                "russian_keywords": {
+                    "type": "keyword_marker",
+                    "keywords": ["пример"]
+                },
+                "russian_stemmer": {
+                    "type": "stemmer",
+                    "language": "russian"
+                },
+                "russian_ngram_filter": {
+                    "type": "ngram",
+                    "min_gram": 2,
+                    "max_gram": 3
+                },
+                "english_stop": {
+                    "type": "stop",
+                    "stopwords": "_english_"
+                },
+                "english_stemmer": {
+                    "type": "stemmer",
+                    "language": "english"
+                },
+                "english_ngram_filter": {
+                    "type": "ngram",
+                    "min_gram": 2,
+                    "max_gram": 3
+                }
+            },
+            "analyzer": {
+                "rebuilt_russian": {
+                    "tokenizer": "standard",
+                    "filter": [
+                        "lowercase",
+                        "russian_stop",
+                        "russian_keywords",
+                        "russian_stemmer",
+                        "russian_ngram_filter"
+                    ]
+                },
+                "english_ngram": {
+                    "tokenizer": "standard",
+                    "filter": [
+                        "lowercase",
+                        "english_stop",
+                        "english_stemmer",
+                        "english_ngram_filter"
+                    ]
+                }
+            }
+        }
+    },
     "mappings": {
         "properties": {
             "type": {"type": "keyword"},
             "id": {"type": "keyword"},
             "attributes": {
                 "properties": {
-                    "name_en": {"type": "text", "analyzer": "english"},
-                    "name_ru": {"type": "text", "analyzer": "russian"},
+                    "name_en": {"type": "text", "analyzer": "english_ngram"},
+                    "name_ru": {"type": "text", "analyzer": "rebuilt_russian"}
                 }
             },
             "relationships": {
@@ -24,12 +81,8 @@ PERSON_MAPPING = {
                             "data": {
                                 "type": "nested",
                                 "properties": {
-                                    "type": {
-                                        "type": "keyword"
-                                    },
-                                    "id": {
-                                        "type": "keyword"
-                                    }
+                                    "type": {"type": "keyword"},
+                                    "id": {"type": "keyword"}
                                 }
                             }
                         }
@@ -39,6 +92,7 @@ PERSON_MAPPING = {
         }
     }
 }
+
 
 FILMS_MAPPING = {
     "settings": settings,
