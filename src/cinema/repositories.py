@@ -121,6 +121,7 @@ class PersonRepository:
             "query": {
                 "multi_match": {
                     "query": search_value,
+                    "fuzziness": "AUTO",
                     "type": "best_fields",
                     "fields": ["attributes.name_ru", "attributes.name_en"]
                 }
