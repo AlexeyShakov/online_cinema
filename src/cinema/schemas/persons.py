@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from src.schemas import Meta
 
+
 class MovieData(BaseModel):
     id: str
     type: str

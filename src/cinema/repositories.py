@@ -39,6 +39,7 @@ class FilmRepository:
                 "multi_match": {
                     "query": search_value,
                     "type": "best_fields",
+                    "fuzziness": "AUTO",
                     "fields": ["attributes.title_ru", "attributes.title_en"]
                 }
             },

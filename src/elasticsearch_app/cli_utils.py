@@ -1,10 +1,12 @@
 import os
 import asyncio
+from typing import Dict, Literal
+
 from elasticsearch import AsyncElasticsearch
 
 from src.elasticsearch_app import get_es_connection, close_es_connection, indices
 from src.elasticsearch_app.elastic_communication import get_elastic_communicator
-from src.elasticsearch_app.migrate_data_to_elastic import migrate_entities_to_elastic
+from src.elasticsearch_app.migrate_data_to_elastic import etl_films, etl_persons
 from src import cinema
 
 from dotenv import load_dotenv
@@ -14,8 +16,8 @@ load_dotenv()
 
 
 ALLOWED_MODELS_MAPPER = {
-    "FILM": cinema.Film,
-    "PERSON": cinema.Person
+    "FILMS": cinema.Film,
+    "PERSONS": cinema.Person
 }
 
 async def start_migration():
@@ -28,13 +30,12 @@ async def start_migration():
 async def _prepare_tasks(es_connection: AsyncElasticsearch) -> list[asyncio.Task]:
     arguments = await _get_data_from_env(es_connection)
     tasks = []
-    for args in arguments:
-        task = asyncio.create_task(migrate_entities_to_elastic(*args))
-        tasks.append(task)
+    tasks.append(asyncio.create_task(etl_films(*arguments.get("FILMS"))))
+    tasks.append(asyncio.create_task(etl_persons(*arguments.get("PERSONS"))))
     return tasks
 
 
-async def _get_data_from_env(es_connection: AsyncElasticsearch):
+async def _get_data_from_env(es_connection: AsyncElasticsearch) -> Dict[Literal["FILMS", "PERSONS"], tuple]:
     """
     TRANSFER_BATCH_SIZE - количество объектов, которое за раз берется из БД и посылается в Elastic
     MODELS_TO_TRANSFER_DATA_FROM - название моделей, описывающие таблицы в БД, где лежать сущности, которые нужно перегнать
@@ -43,8 +44,8 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch):
                             MODELS_TO_TRANSFER_DATA_FROM=FILM,PERSON, то в .env должны быть еще такие переменные:
                             PERSON_RELATED_FIELDS и FILM_RELATED_FIELDS
     """
+    arguments = {}
     language = "en"
-    arguments = [] # [(model, related_obj_fields, batch_size), (), ...]
     batch_size = int(os.getenv("TRANSFER_BATCH_SIZE", 500))
     models_to_transfer_data_from = os.getenv("MODELS_TO_TRANSFER_DATA_FROM")
     if not models_to_transfer_data_from:
@@ -57,9 +58,8 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch):
         related_fields = os.getenv(f"{model_name}_RELATED_FIELDS", [])
         if related_fields:
             related_fields = related_fields.split(",")
-        arguments.append((model, related_fields, es_connection, batch_size, language))
+        arguments[model_name] = (model, related_fields, es_connection, batch_size, language)
     return arguments
-
 
 async def create_indices() -> None:
     es_connection = await get_es_connection()
