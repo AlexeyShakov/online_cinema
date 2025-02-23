@@ -4,12 +4,11 @@ from dataclasses import asdict
 
 from elasticsearch import AsyncElasticsearch
 
-from src.elasticsearch_app import config
 from src.elasticsearch_app.data_types import ESConnectionSettings
 from src.general_usage.logging_config import LOGGER
-from src.general_usage.settings import get_elastic_settings
+from src.settings import get_elastic_settings
 
-elastic_settings = get_elastic_settings()
+ELASTIC_SETTINGS = get_elastic_settings()
 
 
 class ElasticConnectionHandler:
@@ -85,7 +84,7 @@ class ElasticConnectionHandler:
             LOGGER.exception(f"Ошибка при проверки Elastic соединения: {e}")
 
 
-__ES_CONNECTION_HANDLER = ElasticConnectionHandler(ESConnectionSettings(hosts=[elastic_settings.elastic_url]))
+__ES_CONNECTION_HANDLER = ElasticConnectionHandler(ESConnectionSettings(hosts=[ELASTIC_SETTINGS.elastic_url]))
 
 
 async def get_es_connection() -> AsyncElasticsearch:

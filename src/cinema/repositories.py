@@ -9,11 +9,11 @@ from src.cinema.data_types import ActorsElasticResponse, MoviesElasticResponse
 from src.cinema import models
 from src.elasticsearch_app import get_es_connection
 
-from src.general_usage.settings import get_elastic_settings
+from src.settings import get_elastic_settings
 
 FILMS = Sequence[models.Film]
 PERSONS = Sequence[models.Person]
-elastic_settings = get_elastic_settings()
+ELASTIC_SETTINGS = get_elastic_settings()
 
 
 async def prepare_data_after_elastic(data: dict, pagination_data: dict) -> dict:
@@ -49,7 +49,7 @@ class FilmRepository:
             "size": limit
         }
         response = await elastic_client.search(
-            index=elastic_settings.film_index_name,
+            index=ELASTIC_SETTINGS.film_index_name,
             body=query,
             filter_path="hits.hits._source,hits.total"
         )
@@ -125,7 +125,7 @@ class PersonRepository:
             "size": limit,
         }
         response = await elastic_client.search(
-            index=elastic_settings.person_index_name,
+            index=ELASTIC_SETTINGS.person_index_name,
             body=query,
             filter_path="hits.hits._source,hits.total"
         )

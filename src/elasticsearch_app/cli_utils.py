@@ -8,14 +8,14 @@ from src.elasticsearch_app import get_es_connection, close_es_connection, indice
 from src.elasticsearch_app.elastic_communication import get_elastic_communicator
 from src.elasticsearch_app.migrate_data_to_elastic import etl_films, etl_persons
 from src import cinema
-from src.general_usage.settings import get_elastic_settings
+from src.settings import get_elastic_settings
 
 from dotenv import load_dotenv
 
 
 load_dotenv()
 
-elastic_settings = get_elastic_settings()
+ELASTIC_SETTINGS = get_elastic_settings()
 
 
 ALLOWED_MODELS_MAPPER = {
@@ -49,8 +49,8 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch) -> Dict[Literal[
     """
     arguments = {}
     language = "en"
-    batch_size = elastic_settings.transfer_batch_size
-    models_to_transfer_data_from = elastic_settings.models_to_transfer_data_from
+    batch_size = ELASTIC_SETTINGS.transfer_batch_size
+    models_to_transfer_data_from = ELASTIC_SETTINGS.models_to_transfer_data_from
     cursor = {"column_name": "id", "value_to_start_from": None}
     if not models_to_transfer_data_from:
         raise Exception("Отсутствует информация о моделях, откуда нужно перенести данные")
@@ -58,7 +58,7 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch) -> Dict[Literal[
         model = ALLOWED_MODELS_MAPPER.get(model_name)
         if not model:
             raise Exception(f"Вы указали неверную модель - {model_name}")
-        related_fields = getattr(elastic_settings, f"{model_name}_related_fields")
+        related_fields = getattr(ELASTIC_SETTINGS, f"{model_name}_related_fields")
         arguments[model_name] = (model, related_fields, es_connection, batch_size, language, cursor)
     return arguments
 
@@ -66,8 +66,8 @@ async def create_indices() -> None:
     es_connection = await get_es_connection()
     elastic_communicator = await get_elastic_communicator()
     tasks = (
-        asyncio.Task(elastic_communicator.create_index(indices.PERSON_MAPPING, cinema.PERSON_INDEX_NAME, es_connection)),
-        asyncio.Task(elastic_communicator.create_index(indices.FILMS_MAPPING, cinema.FILM_INDEX_NAME, es_connection))
+        asyncio.Task(elastic_communicator.create_index(indices.PERSON_MAPPING, ELASTIC_SETTINGS.person_index_name, es_connection)),
+        asyncio.Task(elastic_communicator.create_index(indices.FILMS_MAPPING, ELASTIC_SETTINGS.film_index_name, es_connection))
     )
     try:
         await asyncio.gather(*tasks)

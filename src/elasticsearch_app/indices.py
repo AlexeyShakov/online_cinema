@@ -1,10 +1,10 @@
-from src.general_usage.settings import get_elastic_settings
+from src.settings import get_elastic_settings
 
-elastic_settings = get_elastic_settings()
+ELASTIC_SETTINGS = get_elastic_settings()
 
 settings = {
-    "number_of_shards": elastic_settings.shard_number,
-    "number_of_replicas": elastic_settings.replica_number,
+    "number_of_shards": ELASTIC_SETTINGS.shard_number,
+    "number_of_replicas": ELASTIC_SETTINGS.replica_number,
 }
 
 PERSON_MAPPING = {

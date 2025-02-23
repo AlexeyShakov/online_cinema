@@ -1,4 +1,4 @@
-from typing import Sequence, Type, Literal
+from typing import Sequence, Literal
 from elasticsearch.exceptions import RequestError, BadRequestError
 from elasticsearch import AsyncElasticsearch
 
@@ -6,6 +6,10 @@ from elasticsearch.helpers import async_bulk
 
 from src.general_usage.logging_config import LOGGER
 from src import cinema
+from src.settings import get_elastic_settings
+
+
+ELASTIC_SETTINGS = get_elastic_settings()
 
 
 class ElasticCommunicator:
@@ -41,7 +45,7 @@ class ElasticCommunicator:
             else:
                 name_en = person.full_name
             person_obj = {
-                "_index": cinema.PERSON_INDEX_NAME,
+                "_index": ELASTIC_SETTINGS.person_index_name,
                 "_source": {
                     "type": "actors",
                     "id": person.id,
@@ -73,7 +77,7 @@ class ElasticCommunicator:
             else:
                 title_en = film.title
             film_obj = {
-                "_index": cinema.FILM_INDEX_NAME,
+                "_index": ELASTIC_SETTINGS.film_index_name,
                 "_id": str(film.id),
                 "_source": {
                     "id": str(film.id),
