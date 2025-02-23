@@ -48,6 +48,7 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch) -> Dict[Literal[
     language = "en"
     batch_size = int(os.getenv("TRANSFER_BATCH_SIZE", 500))
     models_to_transfer_data_from = os.getenv("MODELS_TO_TRANSFER_DATA_FROM")
+    cursor = {"column_name": "id", "value_to_start_from": None}
     if not models_to_transfer_data_from:
         raise Exception("Отсутствует информация о моделях, откуда нужно перенести данные")
     models_to_transfer_data_from = [model.upper() for model in models_to_transfer_data_from.split(",")]
@@ -58,7 +59,7 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch) -> Dict[Literal[
         related_fields = os.getenv(f"{model_name}_RELATED_FIELDS", [])
         if related_fields:
             related_fields = related_fields.split(",")
-        arguments[model_name] = (model, related_fields, es_connection, batch_size, language)
+        arguments[model_name] = (model, related_fields, es_connection, batch_size, language, cursor)
     return arguments
 
 async def create_indices() -> None:
