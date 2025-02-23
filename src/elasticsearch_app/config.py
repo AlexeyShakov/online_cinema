@@ -1,24 +1,32 @@
-import os
-from dotenv import load_dotenv
+from typing import List, Annotated
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
 
-
-
-load_dotenv()
-
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ElasticSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
+    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', extra="allow")
 
     elastic_url: str = "http://localhost:9200"
     person_index_name: str
     film_index_name: str
     shard_number: int = 1
     replica_number: int = 1
+    transfer_batch_size: int = 500
+    persons_related_fields: Annotated[List[str], NoDecode]
+    films_related_fields: Annotated[List[str], NoDecode]
+    models_to_transfer_data_from: Annotated[List[str], NoDecode]
 
+    @field_validator('persons_related_fields', mode='before')
+    @classmethod
+    def decode_persons_related_fields(cls, v: str) -> List[str]:
+        return [x.strip() for x in v.split(',')]
 
-SHARD_NUMBER = 1
-REPLICA_NUMBER = 1
-ELASTIC_URL = os.getenv("ELASTIC_URL")
-PERSON_INDEX_NAME = "persons"
-FILM_INDEX_NAME = "films"
+    @field_validator('films_related_fields', mode='before')
+    @classmethod
+    def decode_films_related_fields(cls, v: str) -> List[str]:
+        return [x.strip() for x in v.split(',')]
+
+    @field_validator('models_to_transfer_data_from', mode='before')
+    @classmethod
+    def decode_models_to_transfer_data_from(cls, v: str) -> List[str]:
+        return [x.strip() for x in v.split(',')]

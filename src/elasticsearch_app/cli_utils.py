@@ -8,16 +8,19 @@ from src.elasticsearch_app import get_es_connection, close_es_connection, indice
 from src.elasticsearch_app.elastic_communication import get_elastic_communicator
 from src.elasticsearch_app.migrate_data_to_elastic import etl_films, etl_persons
 from src import cinema
+from src.general_usage.settings import get_elastic_settings
 
 from dotenv import load_dotenv
 
 
 load_dotenv()
 
+elastic_settings = get_elastic_settings()
+
 
 ALLOWED_MODELS_MAPPER = {
-    "FILMS": cinema.Film,
-    "PERSONS": cinema.Person
+    "films": cinema.Film,
+    "persons": cinema.Person
 }
 
 async def start_migration():
@@ -30,8 +33,8 @@ async def start_migration():
 async def _prepare_tasks(es_connection: AsyncElasticsearch) -> list[asyncio.Task]:
     arguments = await _get_data_from_env(es_connection)
     tasks = []
-    tasks.append(asyncio.create_task(etl_films(*arguments.get("FILMS"))))
-    tasks.append(asyncio.create_task(etl_persons(*arguments.get("PERSONS"))))
+    tasks.append(asyncio.create_task(etl_films(*arguments.get("films"))))
+    tasks.append(asyncio.create_task(etl_persons(*arguments.get("persons"))))
     return tasks
 
 
@@ -46,19 +49,16 @@ async def _get_data_from_env(es_connection: AsyncElasticsearch) -> Dict[Literal[
     """
     arguments = {}
     language = "en"
-    batch_size = int(os.getenv("TRANSFER_BATCH_SIZE", 500))
-    models_to_transfer_data_from = os.getenv("MODELS_TO_TRANSFER_DATA_FROM")
+    batch_size = elastic_settings.transfer_batch_size
+    models_to_transfer_data_from = elastic_settings.models_to_transfer_data_from
     cursor = {"column_name": "id", "value_to_start_from": None}
     if not models_to_transfer_data_from:
         raise Exception("Отсутствует информация о моделях, откуда нужно перенести данные")
-    models_to_transfer_data_from = [model.upper() for model in models_to_transfer_data_from.split(",")]
     for model_name in models_to_transfer_data_from:
         model = ALLOWED_MODELS_MAPPER.get(model_name)
         if not model:
             raise Exception(f"Вы указали неверную модель - {model_name}")
-        related_fields = os.getenv(f"{model_name}_RELATED_FIELDS", [])
-        if related_fields:
-            related_fields = related_fields.split(",")
+        related_fields = getattr(elastic_settings, f"{model_name}_related_fields")
         arguments[model_name] = (model, related_fields, es_connection, batch_size, language, cursor)
     return arguments
 

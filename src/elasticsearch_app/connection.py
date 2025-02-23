@@ -7,6 +7,9 @@ from elasticsearch import AsyncElasticsearch
 from src.elasticsearch_app import config
 from src.elasticsearch_app.data_types import ESConnectionSettings
 from src.general_usage.logging_config import LOGGER
+from src.general_usage.settings import get_elastic_settings
+
+elastic_settings = get_elastic_settings()
 
 
 class ElasticConnectionHandler:
@@ -28,7 +31,7 @@ class ElasticConnectionHandler:
             await self._check_existing_connection(self.__connection)
         return self.__connection
 
-    @backoff.on_predicate(backoff.constant, lambda x: x is False, interval=0.5 ,max_tries=3)
+    @backoff.on_predicate(backoff.constant, lambda x: x is False, interval=0.5, max_tries=3)
     @backoff.on_exception(backoff.constant, Exception, interval=0.5, max_tries=3)
     async def _initialize_connection(self, connection_params: ESConnectionSettings) -> bool:
         connection = AsyncElasticsearch(**asdict(connection_params))
@@ -62,7 +65,7 @@ class ElasticConnectionHandler:
         if not is_alive:
             await self._initialize_connection(self.__connection_params)
 
-    @backoff.on_predicate(backoff.constant, lambda x: x is False, interval=0.5 ,max_tries=3)
+    @backoff.on_predicate(backoff.constant, lambda x: x is False, interval=0.5, max_tries=3)
     @backoff.on_exception(backoff.constant, Exception, interval=0.5, max_tries=3)
     async def _is_connection_alive(self, connection: AsyncElasticsearch) -> bool:
         try:
@@ -82,7 +85,7 @@ class ElasticConnectionHandler:
             LOGGER.exception(f"Ошибка при проверки Elastic соединения: {e}")
 
 
-__ES_CONNECTION_HANDLER = ElasticConnectionHandler(ESConnectionSettings(hosts=[config.ELASTIC_URL]))
+__ES_CONNECTION_HANDLER = ElasticConnectionHandler(ESConnectionSettings(hosts=[elastic_settings.elastic_url]))
 
 
 async def get_es_connection() -> AsyncElasticsearch:
@@ -91,4 +94,3 @@ async def get_es_connection() -> AsyncElasticsearch:
 
 async def close_es_connection() -> None:
     await __ES_CONNECTION_HANDLER.close_es_connection()
-
