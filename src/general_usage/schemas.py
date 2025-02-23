@@ -6,5 +6,6 @@ class Pagination(BaseModel):
     limit: int
     total: int
 
+
 class Meta(BaseModel):
     pagination: Pagination

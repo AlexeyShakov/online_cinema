@@ -6,7 +6,7 @@ from elasticsearch import AsyncElasticsearch
 
 from src.elasticsearch_app import config
 from src.elasticsearch_app.data_types import ESConnectionSettings
-from src.logging_config import LOGGER
+from src.general_usage.logging_config import LOGGER
 
 
 class ElasticConnectionHandler:

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-from src.schemas import Meta
+from src.general_usage.schemas import Meta
 
 
 class ActorData(BaseModel):

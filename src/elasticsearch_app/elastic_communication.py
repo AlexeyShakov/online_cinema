@@ -4,7 +4,7 @@ from elasticsearch import AsyncElasticsearch
 
 from elasticsearch.helpers import async_bulk
 
-from src.logging_config import LOGGER
+from src.general_usage.logging_config import LOGGER
 from src import cinema
 
 

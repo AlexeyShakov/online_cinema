@@ -4,7 +4,7 @@ from elasticsearch import AsyncElasticsearch
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
-from src.database import get_db_session
+from src.general_usage.database import get_db_session
 from src import cinema
 from src.elasticsearch_app import data_types
 from src.elasticsearch_app.elastic_communication import get_elastic_communicator

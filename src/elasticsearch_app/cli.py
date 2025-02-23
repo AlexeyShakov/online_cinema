@@ -2,7 +2,7 @@ import typer
 import asyncio
 
 from src.elasticsearch_app.cli_utils import start_migration, create_indices
-from src.logging_config import LOGGER
+from src.general_usage.logging_config import LOGGER
 from src.elasticsearch_app.kinopoisk import process_kinopoisk_data
 
 

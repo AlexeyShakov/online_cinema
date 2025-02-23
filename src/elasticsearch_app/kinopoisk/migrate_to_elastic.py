@@ -7,10 +7,10 @@ from elasticsearch import AsyncElasticsearch
 import pandas as pd
 
 from src import cinema
-from src.database import get_db_session
+from src.general_usage.database import get_db_session
 from src.elasticsearch_app.connection import get_es_connection, close_es_connection
 from src.elasticsearch_app.elastic_communication import get_elastic_communicator
-from src.logging_config import LOGGER
+from src.general_usage.logging_config import LOGGER
 
 FILMS = Sequence[cinema.Film]
 PERSONS = Sequence[cinema.Person]

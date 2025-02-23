@@ -1,5 +1,5 @@
-from src.models import Base
-from src.database import DateTimeWithTZ
+from src.general_usage.models import Base
+from src.general_usage.custom_model_fields import DateTimeWithTZ
 import uuid
 
 from sqlalchemy.orm import mapped_column, Mapped, relationship
