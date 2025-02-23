@@ -1,7 +1,9 @@
+from typing import Callable
+
 from fastapi import APIRouter, Query, Depends
 
 from src.cinema.services import FilmService, get_films_service
-from src.cinema.schemas import MoviesResponse
+from src.cinema.schemas import MoviesResponse, serializers
 
 
 movie_routes = APIRouter(
@@ -15,7 +17,9 @@ async def search_movies(
     filter_search: str = Query(..., alias="filter[search]", description="Search term for full-text search"),
     page_size: int = Query(10, alias="page[size]", description="Number of items per page"),
     page_number: int = Query(1, alias="page[number]", description="Page number for pagination"),
-    film_service: FilmService = Depends(get_films_service)
+    film_service: FilmService = Depends(get_films_service),
+    serializer: Callable = Depends(serializers.get_elastic_serializer)
 ):
     search_result = await film_service.search_films(filter_search, page_size, page_number)
-    return search_result
+    response = serializer(MoviesResponse, search_result, {"limit": page_size, "offset": page_number})
+    return response

@@ -2,7 +2,7 @@ from fastapi import Depends
 
 from src.cinema import FilmRepository, get_film_repository
 from src.cinema import PersonRepository, get_person_repository
-from src.cinema.schemas import PersonDataResponse, MoviesResponse
+from src.cinema import data_types
 
 
 class FilmService:
@@ -14,7 +14,7 @@ class FilmService:
             search_value: str,
             limit: int,
             offset: int
-    ) -> MoviesResponse:
+    ) -> data_types.MoviesElasticResponse:
         return await self._repository.search_films(search_value, limit, offset)
 
 
@@ -27,7 +27,7 @@ class PersonsService:
             search_value: str,
             limit: int,
             offset: int
-    ) -> PersonDataResponse:
+    ) -> data_types.ActorsElasticResponse:
         return await self._repository.search_persons(search_value, limit, offset)
 
 
