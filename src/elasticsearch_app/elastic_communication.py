@@ -12,7 +12,7 @@ from src.settings import get_elastic_settings
 ELASTIC_SETTINGS = get_elastic_settings()
 
 
-class ElasticCommunicator:
+class ElasticClient:
     @staticmethod
     async def create_index(mapping: dict, index_name: str, es_client: AsyncElasticsearch) -> None:
         if not await es_client.indices.exists(index=index_name):
@@ -107,5 +107,5 @@ class ElasticCommunicator:
         return result
 
 
-async def get_elastic_communicator() -> ElasticCommunicator:
-    return ElasticCommunicator()
+async def get_elastic_communicator() -> ElasticClient:
+    return ElasticClient()

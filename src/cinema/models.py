@@ -1,4 +1,4 @@
-from src.general_usage.models import Base
+from src.general_usage.sa_models import SABaseModel
 from src.general_usage.custom_model_fields import DateTimeWithTZ
 import uuid
 
@@ -9,7 +9,7 @@ from typing import Optional, List
 from datetime import datetime
 
 
-class Person(Base):
+class Person(SABaseModel):
     __tablename__ = "person"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -20,7 +20,7 @@ class Person(Base):
     films: Mapped[List["Film"]] = relationship(secondary="person_film_work", back_populates="persons")
 
 
-class PersonFilmRelation(Base):
+class PersonFilmRelation(SABaseModel):
     __tablename__ = "person_film_work"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -30,7 +30,7 @@ class PersonFilmRelation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTimeWithTZ)
 
 
-class Film(Base):
+class Film(SABaseModel):
     __tablename__ = "film_work"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -47,7 +47,7 @@ class Film(Base):
     genres: Mapped[List["Genre"]] = relationship(secondary="genre_film_work")
 
 
-class Genre(Base):
+class Genre(SABaseModel):
     __tablename__ = "genre"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -57,7 +57,7 @@ class Genre(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTimeWithTZ)
 
 
-class MovieGenreRelation(Base):
+class MovieGenreRelation(SABaseModel):
     __tablename__ = "genre_film_work"
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid.uuid4()))

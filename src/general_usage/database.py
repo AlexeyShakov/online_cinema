@@ -9,7 +9,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URL = f"sqlite+aiosqlite:///{os.path.join(BASE_DIR, 'db.sqlite')}"
 GENERAL_APPLICATION_SETTINGS = get_general_application_settings()
 
-# async_engine = create_async_engine(DATABASE_URL, echo=global_vars.VIEW_SQL_QUERIES)
 async_engine = create_async_engine(DATABASE_URL, echo=GENERAL_APPLICATION_SETTINGS.view_sql_queries)
 AsyncSessionLocal = async_sessionmaker(
     bind=async_engine,

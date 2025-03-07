@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-from src.general_usage.schemas import Meta
+from src.general_usage.jsonapi_schemas import ListResponse
 
 
 class ActorData(BaseModel):
@@ -26,6 +26,5 @@ class Movie(BaseModel):
     attributes: Attributes
     relationships: Relationships
 
-class MoviesResponse(BaseModel):
-    meta: Meta
-    data: List[Movie]
+class MoviesResponse(ListResponse[Movie]):
+    ...
