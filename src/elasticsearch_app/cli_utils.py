@@ -23,7 +23,7 @@ ALLOWED_MODELS_MAPPER = {
     "persons": cinema.Person
 }
 
-async def start_migration():
+async def start_migration() -> None:
     es_connection = await get_es_connection()
     tasks = await _prepare_tasks(es_connection)
     await asyncio.gather(*tasks)

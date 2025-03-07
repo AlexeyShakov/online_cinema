@@ -11,7 +11,7 @@ app = typer.Typer()
 
 
 @app.command()
-def create_elastic_indices():
+def create_elastic_indices() -> None:
     """
     Команда для взаимодействия с индексами ElasticSearch
     """
@@ -21,7 +21,7 @@ def create_elastic_indices():
 
 
 @app.command()
-def migrate_data_to_elastic():
+def migrate_data_to_elastic() -> None:
     """
     Переносит данные из мастер-базы в ElasticSearch
 
@@ -33,7 +33,7 @@ def migrate_data_to_elastic():
 
 
 @app.command(name="migrate_kinopoisk_data")
-def migrate_kinopoisk_data():
+def migrate_kinopoisk_data() -> None:
     """
     Переносит данные о фильмах из кинопоиска в мастер БД и в эластик
     """

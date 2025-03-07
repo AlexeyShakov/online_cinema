@@ -14,12 +14,12 @@ ELASTIC_SETTINGS = get_elastic_settings()
 class ElasticConnectionHandler:
     __instance = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> None:
         if not cls.__instance:
             cls.__instance = super().__new__(cls)
         return cls.__instance
 
-    def __init__(self, connection_params: ESConnectionSettings):
+    def __init__(self, connection_params: ESConnectionSettings) -> None:
         self.__connection_params = connection_params
         self.__connection: Optional[AsyncElasticsearch] = None
 

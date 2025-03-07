@@ -19,7 +19,7 @@ async def search_persons(
     page_number: int = Query(1, alias="page[number]", description="Page number for pagination"),
     person_service: PersonsService = Depends(get_persons_service),
     serializer: Callable = Depends(serializers.get_elastic_serializer)
-):
+) -> PersonDataResponse:
     search_result = await person_service.search_persons(filter_search, page_size, page_number)
     response = serializer(PersonDataResponse, search_result, {"limit": page_size, "offset": page_number})
     return response

@@ -57,7 +57,7 @@ class KinopoiskDataMigrator:
             await self._prepare_films(row, today_datetime)
             await self._prepare_all_persons_types(row, today_datetime)
 
-    async def _prepare_films(self, row, current_datetime: str):
+    async def _prepare_films(self, row, current_datetime: str) -> None:
         movie_title = row["movie"]
         self._films_persons_relation[movie_title] = {}
         movie = cinema.Film(
@@ -132,9 +132,8 @@ class KinopoiskDataMigrator:
 
     async def _send_to_elastic(self, films: FILMS, persons: PERSONS, es_connection: AsyncElasticsearch) -> None:
         elastic_communicator = await get_elastic_communicator()
-        language = "ru"
-        films_data = await elastic_communicator.form_film_objs(films, language)
-        persons_data = await elastic_communicator.form_person_objs(persons, language)
+        films_data = await elastic_communicator.form_film_objs(films, "ru")
+        persons_data = await elastic_communicator.form_person_objs(persons, "ru")
         await asyncio.gather(
             asyncio.Task(elastic_communicator.send_to_elastic(films_data, es_connection)),
             asyncio.Task(elastic_communicator.send_to_elastic(persons_data, es_connection)),
@@ -149,7 +148,7 @@ class KinopoiskDataMigrator:
             return await cinema.PersonRepository.fetch_with_related_fields(persons, ("films", ), session)
 
 
-async def process_kinopoisk_data():
+async def process_kinopoisk_data() -> None:
     es_connection = await get_es_connection()
     script_dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(script_dir, 'kinopoisk-top250.csv')
