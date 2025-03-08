@@ -3,7 +3,7 @@ from typing import Callable
 from fastapi import APIRouter, Query, Depends
 
 from src.cinema.services import PersonsService, get_persons_service
-from src.cinema.schemas import PersonDataResponse, serializers
+from src.cinema.to_json_schemas import PersonDataResponse, serializers
 
 
 person_routes = APIRouter(

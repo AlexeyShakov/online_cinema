@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
-from typing import Sequence
+from typing import Sequence, Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from src.cinema.data_types import ActorsElasticResponse, MoviesElasticResponse
+from src.cinema.datastructs.elastic_datastructs import persons, films
+from src.cinema.datastructs import from_elastic_to_python
 from src.cinema import models
 from src.elasticsearch_app import get_es_connection
 
@@ -33,8 +34,9 @@ class FilmRepository:
     async def search_films(
             search_value: str,
             limit: int,
-            offset: int
-    ) -> MoviesElasticResponse:
+            offset: int,
+            serializer: Callable
+    ) -> from_elastic_to_python.Movies:
         elastic_client = await get_es_connection()
         query = {
             "query": {
@@ -48,13 +50,12 @@ class FilmRepository:
             "from": offset,
             "size": limit
         }
-        response = await elastic_client.search(
+        response: films.MoviesElasticResponse = await elastic_client.search(
             index=ELASTIC_SETTINGS.film_index_name,
             body=query,
             filter_path="hits.hits._source,hits.total"
         )
-        return response
-
+        return serializer(response)
 
     @staticmethod
     async def bulk_create(films: FILMS, session: AsyncSession) -> FILMS:
@@ -110,7 +111,7 @@ class PersonRepository:
             search_value: str,
             limit: int,
             offset: int
-    ) -> ActorsElasticResponse:
+    ) -> persons.ActorsElasticResponse:
         elastic_client = await get_es_connection()
         query = {
             "query": {
@@ -129,6 +130,7 @@ class PersonRepository:
             body=query,
             filter_path="hits.hits._source,hits.total"
         )
+        print("PERSONS", response)
         return response
 
     @staticmethod

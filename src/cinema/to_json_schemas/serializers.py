@@ -1,13 +1,15 @@
-from src.cinema import schemas, data_types
+from src.cinema import to_json_schemas
+from src.cinema.datastructs.elastic_datastructs import general, persons, films
 
 from typing import Union, TypeVar, Type
 
-S = TypeVar("S", bound=Union[data_types.MoviesElasticResponse, data_types.ActorsElasticResponse])
-ER = TypeVar("ER", bound=Union[schemas.MoviesResponse, schemas.PersonDataResponse])
+
+S = TypeVar("S", bound=Union[films.MoviesElasticResponse, persons.ActorsElasticResponse])
+ER = TypeVar("ER", bound=Union[to_json_schemas.MoviesResponse, to_json_schemas.PersonDataResponse])
 
 
 def prepare_data_after_elastic(response_scheme: Type[S], data: ER,
-                                     pagination_data: data_types.PaginationDict) -> S:
+                                     pagination_data: general.PaginationDict) -> S:
     """
     Избавляемся от лишней вложенности(_source) и добавляем информацию о метаданных
     """

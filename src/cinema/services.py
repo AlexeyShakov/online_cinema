@@ -1,8 +1,9 @@
 from fastapi import Depends
 
-from src.cinema import FilmRepository, get_film_repository
-from src.cinema import PersonRepository, get_person_repository
-from src.cinema import data_types
+from src.cinema import FilmRepository, get_film_repository, PersonRepository, get_person_repository
+from src.cinema.datastructs.elastic_datastructs import persons
+from src.cinema.serializers import from_elastic_to_python as from_elastic_to_python_serializers
+from src.cinema.datastructs import from_elastic_to_python
 
 
 class FilmService:
@@ -14,8 +15,9 @@ class FilmService:
             search_value: str,
             limit: int,
             offset: int
-    ) -> data_types.MoviesElasticResponse:
-        return await self._repository.search_films(search_value, limit, offset)
+    ) -> from_elastic_to_python.Movies:
+        from_elastic_to_python_serializer = from_elastic_to_python_serializers.get_serializer_films_from_elastic_to_python()
+        return await self._repository.search_films(search_value, limit, offset, from_elastic_to_python_serializer)
 
 
 class PersonsService:
@@ -27,7 +29,7 @@ class PersonsService:
             search_value: str,
             limit: int,
             offset: int
-    ) -> data_types.ActorsElasticResponse:
+    ) -> persons.ActorsElasticResponse:
         return await self._repository.search_persons(search_value, limit, offset)
 
 
