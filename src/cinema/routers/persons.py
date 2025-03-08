@@ -3,8 +3,9 @@ from typing import Callable
 from fastapi import APIRouter, Query, Depends
 
 from src.cinema.services import PersonsService, get_persons_service
-from src.cinema.to_json_schemas import PersonDataResponse
+from src.cinema.datastructs.to_json_schemas import PersonDataResponse
 from src.cinema.serializers import from_python_to_json
+from src.general_usage import jsonapi_schemas
 
 
 person_routes = APIRouter(
@@ -21,6 +22,7 @@ async def search_persons(
     person_service: PersonsService = Depends(get_persons_service),
     serializer: Callable = Depends(from_python_to_json.get_persons_to_json_serializer)
 ) -> PersonDataResponse:
-    search_result = await person_service.search_persons(filter_search, page_size, page_number)
-    response = serializer(PersonDataResponse, search_result, {"limit": page_size, "offset": page_number})
+    pagination_info = jsonapi_schemas.Pagination(limit=page_size, offset=page_number)
+    search_result = await person_service.search_persons(filter_search, pagination_info)
+    response = serializer(PersonDataResponse, search_result, pagination_info)
     return response

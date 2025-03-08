@@ -2,27 +2,27 @@ from typing import List
 from pydantic import BaseModel
 
 from src.general_usage.jsonapi_schemas import ListResponse
+from src.cinema.datastructs.to_json_schemas import general
 
-
-class MovieData(BaseModel):
-    id: str
-    type: str
 
 class MoviesRelationship(BaseModel):
-    data: List[MovieData]
+    data: List[general.BaseData]
 
-class ActorAttributes(BaseModel):
+
+class PersonAttributes(BaseModel):
     name_ru: str
     name_en: str
 
-class ActorRelationships(BaseModel):
+
+class PersonRelationships(BaseModel):
     movies: MoviesRelationship
 
-class ActorItem(BaseModel):
+
+class PersonItem(BaseModel):
     type: str
     id: str
-    attributes: ActorAttributes
-    relationships: ActorRelationships
+    attributes: PersonAttributes
+    relationships: PersonRelationships
 
 
 class PersonDataResponse(ListResponse):

@@ -1,14 +1,16 @@
 from src.cinema.datastructs.elastic_datastructs import general
 from src.cinema.datastructs import from_elastic_to_python
-from src.cinema.to_json_schemas import films, persons as person_to_json_schemas
+from src.cinema.datastructs.to_json_schemas import persons as person_to_json_schemas, films, \
+    general as general_schemas_to_json
 from src.general_usage import jsonapi_schemas
 
 from typing import Type, Callable
 
 
 def convert_movies_to_pydantic(response_scheme: Type[films.MoviesResponse], movies: from_elastic_to_python.Movies,
-                               pagination_data: general.PaginationDict) -> films.MoviesResponse:
-    pagination = jsonapi_schemas.Pagination(total=movies.meta.total, **pagination_data)
+                               pagination_data: jsonapi_schemas.Pagination) -> films.MoviesResponse:
+    pagination = jsonapi_schemas.PaginationWithTotal(total=movies.meta.total, limit=pagination_data.limit,
+                                                     offset=pagination_data.offset)
     meta = jsonapi_schemas.Meta(pagination=pagination)
     pydantic_movies = [
         films.Movie(
@@ -22,7 +24,8 @@ def convert_movies_to_pydantic(response_scheme: Type[films.MoviesResponse], movi
             ),
             relationships=films.Relationships(
                 actors=films.ActorsRelationship(
-                    data=[films.ActorData(id=actor.id, type=actor.type) for actor in movie.attributes.actors]
+                    data=[general_schemas_to_json.BaseData(id=actor.id, type=actor.type) for actor in
+                          movie.attributes.actors]
                 )
             )
         )
@@ -33,20 +36,21 @@ def convert_movies_to_pydantic(response_scheme: Type[films.MoviesResponse], movi
 
 def convert_persons_to_pydantic(response_scheme: Type[person_to_json_schemas.PersonDataResponse],
                                 persons: from_elastic_to_python.Persons,
-                                pagination_data: general.PaginationDict) -> person_to_json_schemas.PersonDataResponse:
-    pagination = jsonapi_schemas.Pagination(total=persons.meta.total, **pagination_data)
+                                pagination_data: jsonapi_schemas.Pagination) -> person_to_json_schemas.PersonDataResponse:
+    pagination = jsonapi_schemas.PaginationWithTotal(total=persons.meta.total, limit=pagination_data.limit,
+                                                     offset=pagination_data.offset)
     meta = jsonapi_schemas.Meta(pagination=pagination)
     pydantic_persons = [
-        person_to_json_schemas.ActorItem(
+        person_to_json_schemas.PersonItem(
             type=person.type,
             id=person.id,
-            attributes=person_to_json_schemas.ActorAttributes(
+            attributes=person_to_json_schemas.PersonAttributes(
                 name_ru=person.attributes.title_ru,
                 name_en=person.attributes.title_en
             ),
-            relationships=person_to_json_schemas.ActorRelationships(
+            relationships=person_to_json_schemas.PersonRelationships(
                 movies=person_to_json_schemas.MoviesRelationship(
-                    data=[person_to_json_schemas.MovieData(id=movie.id, type=movie.type) for movie in
+                    data=[general_schemas_to_json.BaseData(id=movie.id, type=movie.type) for movie in
                           person.attributes.movies]
                 )
             )
@@ -57,11 +61,11 @@ def convert_persons_to_pydantic(response_scheme: Type[person_to_json_schemas.Per
 
 
 def get_films_to_json_serializer() -> Callable[
-    [Type[films.MoviesResponse], from_elastic_to_python.Movies, general.PaginationDict], films.MoviesResponse]:
+    [Type[films.MoviesResponse], from_elastic_to_python.Movies, jsonapi_schemas.Pagination], films.MoviesResponse]:
     return convert_movies_to_pydantic
 
 
 def get_persons_to_json_serializer() -> Callable[
     [Type[person_to_json_schemas.PersonDataResponse], from_elastic_to_python.Persons,
-     general.PaginationDict], person_to_json_schemas.PersonDataResponse]:
+     jsonapi_schemas.Pagination], person_to_json_schemas.PersonDataResponse]:
     return convert_persons_to_pydantic

@@ -9,7 +9,7 @@ from src.cinema.datastructs.elastic_datastructs import persons, films
 from src.cinema.datastructs import from_elastic_to_python
 from src.cinema import models
 from src.elasticsearch_app import get_es_connection
-
+from src.general_usage import jsonapi_schemas
 from src.settings import get_elastic_settings
 
 FILMS = Sequence[models.Film]
@@ -33,8 +33,7 @@ class FilmRepository:
     @staticmethod
     async def search_films(
             search_value: str,
-            limit: int,
-            offset: int,
+            pagination_info: jsonapi_schemas.Pagination,
             serializer: Callable[[films.MoviesElasticResponse], from_elastic_to_python.Movies]
     ) -> from_elastic_to_python.Movies:
         elastic_client = await get_es_connection()
@@ -47,8 +46,8 @@ class FilmRepository:
                     "fields": ["attributes.title_ru", "attributes.title_en"]
                 }
             },
-            "from": offset,
-            "size": limit
+            "from": pagination_info.offset,
+            "size": pagination_info.limit
         }
         response: films.MoviesElasticResponse = await elastic_client.search(
             index=ELASTIC_SETTINGS.film_index_name,
@@ -109,8 +108,7 @@ class PersonRepository:
     @staticmethod
     async def search_persons(
             search_value: str,
-            limit: int,
-            offset: int,
+            pagination_info: jsonapi_schemas.Pagination,
             serializer: Callable[[persons.ActorsElasticResponse], from_elastic_to_python.Persons]
     ) -> from_elastic_to_python.Persons:
         elastic_client = await get_es_connection()
@@ -123,8 +121,8 @@ class PersonRepository:
                     "fields": ["attributes.name_ru", "attributes.name_en"]
                 }
             },
-            "from": offset,
-            "size": limit,
+            "from": pagination_info.offset,
+            "size": pagination_info.limit,
         }
         response: persons.ActorsElasticResponse  = await elastic_client.search(
             index=ELASTIC_SETTINGS.person_index_name,
