@@ -9,7 +9,7 @@ class BaseData:
 
 
 @dataclass(frozen=True)
-class Attributes:
+class MovieAttributes:
     title_ru: str
     title_en: str
     description: str
@@ -18,15 +18,35 @@ class Attributes:
 
 
 @dataclass(frozen=True)
+class PersonAttributes:
+    title_ru: str
+    title_en: str
+    movies: List[BaseData]
+
+
+@dataclass(frozen=True)
 class Movie:
     id: str
     type: str
-    attributes: Attributes
+    attributes: MovieAttributes
+
+
+@dataclass(frozen=True)
+class Person:
+    id: str
+    type: str
+    attributes: PersonAttributes
 
 
 @dataclass(frozen=True)
 class Meta:
     total: int
+
+
+@dataclass(frozen=True)
+class Persons:
+    meta: Meta
+    data: List[Person]
 
 
 @dataclass(frozen=True)

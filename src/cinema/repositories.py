@@ -35,7 +35,7 @@ class FilmRepository:
             search_value: str,
             limit: int,
             offset: int,
-            serializer: Callable
+            serializer: Callable[[films.MoviesElasticResponse], from_elastic_to_python.Movies]
     ) -> from_elastic_to_python.Movies:
         elastic_client = await get_es_connection()
         query = {
@@ -110,8 +110,9 @@ class PersonRepository:
     async def search_persons(
             search_value: str,
             limit: int,
-            offset: int
-    ) -> persons.ActorsElasticResponse:
+            offset: int,
+            serializer: Callable[[persons.ActorsElasticResponse], from_elastic_to_python.Persons]
+    ) -> from_elastic_to_python.Persons:
         elastic_client = await get_es_connection()
         query = {
             "query": {
@@ -125,13 +126,12 @@ class PersonRepository:
             "from": offset,
             "size": limit,
         }
-        response = await elastic_client.search(
+        response: persons.ActorsElasticResponse  = await elastic_client.search(
             index=ELASTIC_SETTINGS.person_index_name,
             body=query,
             filter_path="hits.hits._source,hits.total"
         )
-        print("PERSONS", response)
-        return response
+        return serializer(response)
 
     @staticmethod
     async def bulk_create(persons: PERSONS, session: AsyncSession) -> PERSONS:

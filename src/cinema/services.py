@@ -29,8 +29,9 @@ class PersonsService:
             search_value: str,
             limit: int,
             offset: int
-    ) -> persons.ActorsElasticResponse:
-        return await self._repository.search_persons(search_value, limit, offset)
+    ) -> from_elastic_to_python.Persons:
+        from_elastic_to_python_serializer = from_elastic_to_python_serializers.get_serializer_persons_from_elastic_to_python()
+        return await self._repository.search_persons(search_value, limit, offset, from_elastic_to_python_serializer)
 
 
 def get_persons_service(
