@@ -12,6 +12,8 @@ class ElasticSettings(BaseSettings):
     shard_number: int = 1
     replica_number: int = 1
     transfer_batch_size: int = 500
+    movie_title_weight: int = 10
+    movie_description_weight: int = 1
     persons_related_fields: Annotated[List[str], NoDecode]
     films_related_fields: Annotated[List[str], NoDecode]
     models_to_transfer_data_from: Annotated[List[str], NoDecode]

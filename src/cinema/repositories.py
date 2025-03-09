@@ -43,7 +43,9 @@ class FilmRepository:
                     "query": search_value,
                     "type": "best_fields",
                     "fuzziness": "AUTO",
-                    "fields": ["attributes.title_ru", "attributes.title_en"]
+                    "fields": [f"attributes.title_ru^{ELASTIC_SETTINGS.movie_title_weight}",
+                               f"attributes.title_en^{ELASTIC_SETTINGS.movie_title_weight}",
+                               f"attributes.description^{ELASTIC_SETTINGS.movie_description_weight}"]
                 }
             },
             "from": pagination_info.offset,
@@ -124,7 +126,7 @@ class PersonRepository:
             "from": pagination_info.offset,
             "size": pagination_info.limit,
         }
-        response: persons.ActorsElasticResponse  = await elastic_client.search(
+        response: persons.ActorsElasticResponse = await elastic_client.search(
             index=ELASTIC_SETTINGS.person_index_name,
             body=query,
             filter_path="hits.hits._source,hits.total"
@@ -138,7 +140,8 @@ class PersonRepository:
         return persons
 
     @staticmethod
-    async def fetch_with_related_fields(persons: PERSONS, related_fields: Sequence[str], session: AsyncSession) -> PERSONS:
+    async def fetch_with_related_fields(persons: PERSONS, related_fields: Sequence[str],
+                                        session: AsyncSession) -> PERSONS:
         person_ids = [person.id for person in persons]
         options = [selectinload(getattr(models.Person, field)) for field in related_fields]
         stmt = (

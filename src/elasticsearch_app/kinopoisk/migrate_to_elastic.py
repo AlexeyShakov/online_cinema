@@ -29,7 +29,7 @@ class KinopoiskDataMigrator:
         self._for_creating_persons: List[cinema.Person] = []
         self._for_creating_movies: List[cinema.Film] = []
 
-    async def process(self):
+    async def process(self) -> None:
         today_datetime = datetime.utcnow().replace(tzinfo=timezone.utc)
         today_datetime = today_datetime.strftime("%Y-%m-%d %H:%M:%S.%f+00")
 
