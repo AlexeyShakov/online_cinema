@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Type, Any, Tuple, Dict
 import backoff
 from dataclasses import asdict
 
@@ -12,9 +12,9 @@ ELASTIC_SETTINGS = get_elastic_settings()
 
 
 class ElasticConnectionHandler:
-    __instance = None
+    __instance: Optional["ElasticConnectionHandler"] = None
 
-    def __new__(cls, *args, **kwargs) -> None:
+    def __new__(cls, *args: Tuple[Any, ...], **kwargs: Dict[str, Any]) -> "ElasticConnectionHandler":
         if not cls.__instance:
             cls.__instance = super().__new__(cls)
         return cls.__instance
@@ -25,9 +25,11 @@ class ElasticConnectionHandler:
 
     async def get_connection(self) -> AsyncElasticsearch:
         if not self.__connection:
-            await self._initialize_connection(self.__connection_params)
+            connected = await self._initialize_connection(self.__connection_params)
         else:
-            await self._check_existing_connection(self.__connection)
+            connected = await self._check_existing_connection(self.__connection)
+        if not connected:
+            raise Exception("Ошибка при подключении к Elastic")
         return self.__connection
 
     @backoff.on_predicate(backoff.constant, lambda x: x is False, interval=0.5, max_tries=3)
@@ -56,17 +58,20 @@ class ElasticConnectionHandler:
             LOGGER.exception(f"Elastic не доступен: {e}")
             return False
 
-    async def _check_existing_connection(self, connection: AsyncElasticsearch) -> None:
+    async def _check_existing_connection(self, connection: AsyncElasticsearch) -> bool:
         try:
             is_alive = await self._is_connection_alive(connection)
         except Exception:
             is_alive = False
         if not is_alive:
-            await self._initialize_connection(self.__connection_params)
+            is_alive = await self._initialize_connection(self.__connection_params)
+        return is_alive
 
     @backoff.on_predicate(backoff.constant, lambda x: x is False, interval=0.5, max_tries=3)
     @backoff.on_exception(backoff.constant, Exception, interval=0.5, max_tries=3)
-    async def _is_connection_alive(self, connection: AsyncElasticsearch) -> bool:
+    async def _is_connection_alive(self, connection: Optional[AsyncElasticsearch]) -> bool:
+        if connection is None:
+            return False
         try:
             return await connection.ping()
         except Exception as e:
@@ -74,6 +79,9 @@ class ElasticConnectionHandler:
             return False
 
     async def close_es_connection(self) -> None:
+        if self.__connection is None:
+            LOGGER.info("Соединение с Elastic уже было закрыто")
+            return
         try:
             if await self._is_connection_alive(self.__connection):
                 await self.__connection.close()

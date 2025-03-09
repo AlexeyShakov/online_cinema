@@ -23,7 +23,6 @@ aiohttp = "^3.11.13"
 pre-commit = "^4.1.0"
 mypy = "^1.15.0"
 types-requests = "^2.32.0.20250306"
-types-sqlalchemy = "^1.4.53.38"
 
 [tool.mypy]
 python_version = "3.10"
@@ -32,6 +31,7 @@ disallow_untyped_defs = true
 warn_return_any = true
 check_untyped_defs = true
 exclude = ["venv", "migrations"]
+plugins = ["sqlalchemy.ext.mypy.plugin"]
 
 
 [build-system]

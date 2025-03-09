@@ -1,12 +1,14 @@
 from sqlalchemy import types
 from datetime import datetime, timezone
 
+from typing import Any
+
 
 class DateTimeWithTZ(types.TypeDecorator):
     """Custom DateTime type for proper ISO 8601 format and timezone handling."""
     impl = types.Text
 
-    def process_bind_param(self, value, dialect) -> str:
+    def process_bind_param(self, value: Any, dialect: Any) -> Any:
         """Convert datetime object to ISO format string before inserting into DB."""
         if value is None:
             return None
@@ -18,7 +20,7 @@ class DateTimeWithTZ(types.TypeDecorator):
             return value.strftime("%Y-%m-%d %H:%M:%S.%f+00")  # Convert to DB format
         raise TypeError("Invalid type for DateTimeWithTZ. Expected datetime or string.")
 
-    def process_result_value(self, value, dialect) -> datetime:
+    def process_result_value(self, value: Any, dialect: Any) -> Any:
         """Convert stored string back to datetime object with timezone."""
         if value is None:
             return None
