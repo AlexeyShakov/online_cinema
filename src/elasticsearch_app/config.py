@@ -7,8 +7,8 @@ class ElasticSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', extra="allow")
 
     elastic_url: str = "http://localhost:9200"
-    person_index_name: Optional[str] = None
-    film_index_name: Optional[str] = None
+    person_index_name: str
+    film_index_name: str
     shard_number: int = 1
     replica_number: int = 1
     transfer_batch_size: int = 500

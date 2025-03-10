@@ -1,4 +1,4 @@
-from typing import Sequence, Type, Union, Literal, Optional
+from typing import Sequence, Type, Union, Literal, Optional, AsyncGenerator, List
 from elasticsearch import AsyncElasticsearch
 
 from sqlalchemy import select, func
@@ -8,10 +8,11 @@ from src.general_usage.database import get_db_session
 from src import cinema
 from src.elasticsearch_app import data_types
 from src.elasticsearch_app.elastic_communication import get_elastic_communicator
+from src.general_usage import logging_config
 
 
 async def etl_films(
-        model: cinema.Film,
+        model: Type[cinema.Film],
         related_obj_field_names: Sequence[str],
         es_connection: AsyncElasticsearch,
         batch_size: int,
@@ -25,7 +26,7 @@ async def etl_films(
 
 
 async def etl_persons(
-        model: cinema.Person,
+        model: Type[cinema.Person],
         related_obj_field_names: Sequence[str],
         es_connection: AsyncElasticsearch,
         batch_size: int,
@@ -39,11 +40,11 @@ async def etl_persons(
 
 
 async def _get_batches(
-        batch_size: int,
-        model: Type[Union[cinema.Film, cinema.Person]],
-        related_obj_field_names: Sequence[str],
-        cursor: data_types.CursorForGettingBatches
-) -> Sequence[Union[cinema.Film, cinema.Person]]:
+    batch_size: int,
+    model: Type[Union[cinema.Film, cinema.Person]],
+    related_obj_field_names: Sequence[str],
+    cursor: data_types.CursorForGettingBatches
+) -> AsyncGenerator[Sequence[Union[cinema.Film, cinema.Person]], None]:
     while True:
         entities = await _get_entities(
             model=model,
@@ -61,7 +62,7 @@ async def _get_entities(
         related_obj_field_names: Sequence[str],
         batch_size: int,
         cursor: data_types.CursorForGettingBatches
-):
+) -> List[Union[cinema.Film, cinema.Person]]:
     async for session in get_db_session():
         stmt = select(model)
 
@@ -75,6 +76,7 @@ async def _get_entities(
 
         result = await session.scalars(stmt)
         return result.all()
+    return []
 
 
 async def get_row_total_count(model: Type[Union[cinema.Film, cinema.Person]]) -> int:
@@ -82,3 +84,5 @@ async def get_row_total_count(model: Type[Union[cinema.Film, cinema.Person]]) ->
         total_count_stmt = select(func.count()).select_from(model)
         result = await session.execute(total_count_stmt)
         return result.scalar_one()
+    logging_config.LOGGER.info("get_db_session не выдал объект сессии")
+    return 0

@@ -33,12 +33,12 @@ async def start_migration() -> None:
 async def _prepare_tasks(es_connection: AsyncElasticsearch) -> list[asyncio.Task]:
     arguments = await _get_data_from_env(es_connection)
     tasks = []
-    tasks.append(asyncio.create_task(etl_films(*arguments.get("films"))))
-    tasks.append(asyncio.create_task(etl_persons(*arguments.get("persons"))))
+    tasks.append(asyncio.create_task(etl_films(*arguments.get("films", ()))))
+    tasks.append(asyncio.create_task(etl_persons(*arguments.get("persons", ()))))
     return tasks
 
 
-async def _get_data_from_env(es_connection: AsyncElasticsearch) -> Dict[Literal["FILMS", "PERSONS"], tuple]:
+async def _get_data_from_env(es_connection: AsyncElasticsearch) -> Dict[Literal["films", "persons"], tuple]:
     """
     TRANSFER_BATCH_SIZE - количество объектов, которое за раз берется из БД и посылается в Elastic
     MODELS_TO_TRANSFER_DATA_FROM - название моделей, описывающие таблицы в БД, где лежать сущности, которые нужно перегнать

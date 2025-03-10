@@ -24,5 +24,5 @@ async def search_movies(
 ) -> MoviesResponse:
     pagination_info = jsonapi_schemas.Pagination(limit=page_size, offset=page_number)
     search_result = await film_service.search_films(filter_search, pagination_info)
-    response = serializer(MoviesResponse, search_result, pagination_info)
+    response: MoviesResponse = serializer(MoviesResponse, search_result, pagination_info)
     return response

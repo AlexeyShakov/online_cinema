@@ -11,5 +11,5 @@ app.include_router(cinema.person_routes)
 
 
 @app.on_event("shutdown")
-async def shutdown_event():
+async def shutdown_event() -> None:
     await close_es_connection()

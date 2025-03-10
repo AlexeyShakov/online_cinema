@@ -24,5 +24,5 @@ async def search_persons(
 ) -> PersonDataResponse:
     pagination_info = jsonapi_schemas.Pagination(limit=page_size, offset=page_number)
     search_result = await person_service.search_persons(filter_search, pagination_info)
-    response = serializer(PersonDataResponse, search_result, pagination_info)
+    response: PersonDataResponse = serializer(PersonDataResponse, search_result, pagination_info)
     return response

@@ -2,7 +2,7 @@ from src.general_usage.config import GeneralApplicationSettings
 from src.elasticsearch_app.config import ElasticSettings
 
 general_application_settings = GeneralApplicationSettings()
-elastic_settings = ElasticSettings()
+elastic_settings = ElasticSettings() # type: ignore
 
 
 def get_general_application_settings() -> GeneralApplicationSettings:

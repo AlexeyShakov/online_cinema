@@ -31,9 +31,9 @@ class KinopoiskDataMigrator:
 
     async def process(self) -> None:
         today_datetime = datetime.utcnow().replace(tzinfo=timezone.utc)
-        today_datetime = today_datetime.strftime("%Y-%m-%d %H:%M:%S.%f+00")
+        today_datetime_as_str = today_datetime.strftime("%Y-%m-%d %H:%M:%S.%f+00")
 
-        await self._prepare_data_for_creating(self._df, today_datetime)
+        await self._prepare_data_for_creating(self._df, today_datetime_as_str)
         films, persons = await asyncio.gather(
             asyncio.Task(self._create_films(self._for_creating_movies)),
             asyncio.Task(self._create_persons(self._for_creating_persons))
@@ -57,7 +57,7 @@ class KinopoiskDataMigrator:
             await self._prepare_films(row, today_datetime)
             await self._prepare_all_persons_types(row, today_datetime)
 
-    async def _prepare_films(self, row, current_datetime: str) -> None:
+    async def _prepare_films(self, row: pd.Series, current_datetime: str) -> None:
         movie_title = row["movie"]
         self._films_persons_relation[movie_title] = {}
         movie = cinema.Film(
@@ -73,7 +73,7 @@ class KinopoiskDataMigrator:
         self._for_creating_movies.append(movie)
         self._films.append(movie_title)
 
-    async def _prepare_all_persons_types(self, row, current_datetime: str) -> None:
+    async def _prepare_all_persons_types(self, row: pd.Series, current_datetime: str) -> None:
         movie = row["movie"]
         await self._prepare_persons(row["director"].split(";"), current_datetime, movie, "director")
         await self._prepare_persons(row["screenwriter"].split(";"), current_datetime, movie, "writer")
@@ -100,11 +100,13 @@ class KinopoiskDataMigrator:
         async for session in get_db_session():
             films = await cinema.FilmRepository.bulk_create(films, session)
             return films
+        return []
 
     async def _create_persons(self, persons: PERSONS) -> PERSONS:
         async for session in get_db_session():
             persons = await cinema.PersonRepository.bulk_create(persons, session)
             return persons
+        return []
 
     async def _create_film_genre_relations(self, films: FILMS) -> None:
         async for session in get_db_session():
@@ -119,6 +121,9 @@ class KinopoiskDataMigrator:
             film_person_info = film_person_relation.get(film.title)
             for person, roles in film_person_info.items():
                 person_obj = persons_by_full_name.get(person)
+                if not person_obj:
+                    LOGGER.info("Пользователь отсутствует")
+                    continue
                 for role in roles:
                     relation_obj = cinema.PersonFilmRelation(
                         film_work_id=film.id,
@@ -142,10 +147,12 @@ class KinopoiskDataMigrator:
     async def _get_films_with_related_data(self, films: FILMS) -> FILMS:
         async for session in get_db_session():
             return await cinema.FilmRepository.fetch_with_related_fields(films, ("genres", "persons"), session)
+        return []
 
     async def _get_persons_with_related_data(self, persons: PERSONS) -> PERSONS:
         async for session in get_db_session():
             return await cinema.PersonRepository.fetch_with_related_fields(persons, ("films", ), session)
+        return []
 
 
 async def process_kinopoisk_data() -> None:

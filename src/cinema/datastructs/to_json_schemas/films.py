@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-from src.general_usage.jsonapi_schemas import ListResponse
+from src.general_usage.jsonapi_schemas import ListResponse, Meta
 from src.cinema.datastructs.to_json_schemas import general
 
 
@@ -28,4 +28,6 @@ class Movie(BaseModel):
 
 
 class MoviesResponse(ListResponse[Movie]):
-    ...
+    data: list[Movie]
+    meta: Meta
+
