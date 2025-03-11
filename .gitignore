@@ -1,0 +1,34 @@
+# Byte-compiled Python files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Virtual environments
+venv/
+.env/
+
+# PyCharm project files
+.idea/
+
+*.log
+
+*.egg-info/
+
+# Environment variable files
+.env
+.env.*
+
+*.spec
+*.sqlite
+
+commands.txt
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Cache directories
+*.egg-info/
+.cache/
+
+*.csv
