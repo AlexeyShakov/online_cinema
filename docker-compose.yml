@@ -12,7 +12,28 @@ services:
     ports:
       - "9200:9200"
     volumes:
-      - es_data:/usr/share/elasticsearch_app/data
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"'"]
+      interval: 10s
+      retries: 5
+      start_period: 20s
+      timeout: 5s
+
+  online_cinema:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile
+    container_name: online_cinema
+    ports:
+      - "8000:8000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - .:/usr/src/online_cinema
+    env_file:
+      - .env
 
 volumes:
   es_data:

@@ -8,6 +8,9 @@ def convert_movies_to_dataclass(data: films.MoviesElasticResponse) -> from_elast
     meta = from_elastic_to_python.Meta(total=data["hits"]["total"]["value"])
     movies_list = []
 
+    if data["hits"]["total"]["value"] == 0:
+        return from_elastic_to_python.Movies(meta=meta, data=movies_list)
+
     for item in data["hits"]["hits"]:
         source = item["_source"]
 
@@ -36,6 +39,9 @@ def convert_movies_to_dataclass(data: films.MoviesElasticResponse) -> from_elast
 def convert_persons_to_dataclass(data: persons.ActorsElasticResponse) -> from_elastic_to_python.Persons:
     meta = from_elastic_to_python.Meta(total=data["hits"]["total"]["value"])
     actors_list = []
+
+    if data["hits"]["total"]["value"] == 0:
+        return from_elastic_to_python.Persons(meta=meta, data=actors_list)
 
     for item in data["hits"]["hits"]:
         source = item["_source"]

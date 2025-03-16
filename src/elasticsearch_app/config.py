@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
 class ElasticSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', extra="allow")
 
-    elastic_url: str = "http://localhost:9200"
+    elastic_url: str
     person_index_name: str
     film_index_name: str
     shard_number: int = 1
