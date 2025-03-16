@@ -53,9 +53,10 @@ REPLICA_NUMBER=1 - количество реплик ElasticSearch
 ## Старт приложения
 Для первого запуска приложения: ```docker-compose up --build```. Для последующих запусков приложения: ```docker-compose up```
 После того, как проект запустился нужно сделать миграцию данных из мастер БД в ElasticSearch:
-* ```poetry run python -m src.elasticsearch_app.cli create-elastic-indices```(для создания индексов)
-* ```poetry run python -m src.elasticsearch_app.cli  migrate-data-to-elastic```(миграция из SQLite)
-* ```poetry run python -m src.elasticsearch_app.cli migrate_kinopoisk_data```(миграция данных на русском языке из датасета кинопоиска)
+1. Заходим в контейнер приложения ```docker exec -it online_cinema bash```
+2. ```poetry run python -m src.elasticsearch_app.cli create-elastic-indices```(для создания индексов)
+3. ```poetry run python -m src.elasticsearch_app.cli  migrate-data-to-elastic```(миграция из SQLite)
+4. ```poetry run python -m src.elasticsearch_app.cli migrate_kinopoisk_data```(миграция данных на русском языке из датасета кинопоиска)
 
 ## Возможные улучшения(для разработчиков)
 * добавить абстракции для классов репозиториев и сервисов;
